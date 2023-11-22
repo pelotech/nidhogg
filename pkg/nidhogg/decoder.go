@@ -2,16 +2,16 @@ package nidhogg
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	yaml "gopkg.in/yaml.v1"
 )
 
-//GetConfig reads the config file, parses it whether it be in json or yaml and returns a handler config
+// GetConfig reads the config file, parses it whether it be in json or yaml and returns a handler config
 func GetConfig(config string) (HandlerConfig, error) {
 
 	var handlerConf HandlerConfig
-	bytes, err := ioutil.ReadFile(config)
+	bytes, err := os.ReadFile(config)
 	if err != nil {
 		return HandlerConfig{}, fmt.Errorf("unable to read config file: %v", err)
 	}

@@ -16,18 +16,16 @@ limitations under the License.
 package node
 
 import (
+	"context"
 	stdlog "log"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
 
-	"github.com/onsi/gomega"
 	"github.com/uswitch/nidhogg/pkg/apis"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -53,22 +51,23 @@ func TestMain(m *testing.M) {
 // writes the request to requests after Reconcile is finished.
 func SetupTestReconcile(inner reconcile.Reconciler) (reconcile.Reconciler, chan reconcile.Request) {
 	requests := make(chan reconcile.Request)
-	fn := reconcile.Func(func(req reconcile.Request) (reconcile.Result, error) {
-		result, err := inner.Reconcile(req)
+	fn := reconcile.Func(func(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+		result, err := inner.Reconcile(ctx, req)
 		requests <- req
 		return result, err
 	})
 	return fn, requests
 }
 
+// TODO: stop property should implement context.Context
 // StartTestManager adds recFn
-func StartTestManager(mgr manager.Manager, g *gomega.GomegaWithT) (chan struct{}, *sync.WaitGroup) {
-	stop := make(chan struct{})
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		g.Expect(mgr.Start(stop)).NotTo(gomega.HaveOccurred())
-	}()
-	return stop, wg
-}
+//func StartTestManager(mgr manager.Manager, g *gomega.GomegaWithT) (chan struct{}, *sync.WaitGroup) {
+//	stop := make(chan struct {})
+//	wg := &sync.WaitGroup{}
+//	wg.Add(1)
+//	go func() {
+//		defer wg.Done()
+//		g.Expect(mgr.Start(stop)).NotTo(gomega.HaveOccurred())
+//	}()
+//	return stop, wg
+//}

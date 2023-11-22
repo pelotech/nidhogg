@@ -13,12 +13,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 const (
+	// TODO: make taintKey a variable
 	taintKey                 = "nidhogg.uswitch.com"
 	taintOperationAdded      = "added"
 	taintOperationRemoved    = "removed"
@@ -206,7 +207,7 @@ func (h *Handler) calculateTaints(instance *corev1.Node) (*corev1.Node, taintCha
 func (h *Handler) getDaemonsetPod(nodeName string, ds Daemonset) (*corev1.Pod, error) {
 	opts := client.InNamespace(ds.Namespace)
 	pods := &corev1.PodList{}
-	err := h.List(context.TODO(), opts, pods)
+	err := h.List(context.TODO(), pods, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -225,12 +226,12 @@ func (h *Handler) getDaemonsetPod(nodeName string, ds Daemonset) (*corev1.Pod, e
 }
 
 func podReady(pod *corev1.Pod) bool {
-	for _, status := range pod.Status.ContainerStatuses {
-		if status.Ready == false {
-			return false
-		}
+	if pod.Status.Phase == corev1.PodRunning {
+		logf.Log.Info("DaemonSet's Pod is running. Holding 10 seconds before removing taint.")
+		time.Sleep(10 * time.Second)
+		return true
 	}
-	return true
+	return false
 }
 
 func addTaint(taints []corev1.Taint, taintName string) []corev1.Taint {

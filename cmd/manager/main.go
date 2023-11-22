@@ -18,6 +18,7 @@ package main
 import (
 	"flag"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/uswitch/nidhogg/pkg/apis"
 	"github.com/uswitch/nidhogg/pkg/controller"
@@ -25,9 +26,10 @@ import (
 	"github.com/uswitch/nidhogg/pkg/webhook"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var (
@@ -46,7 +48,7 @@ func main() {
 	flag.StringVar(&leaderConfigMap, "leader-configmap", "", "Name of configmap to use for leader election")
 	flag.StringVar(&leaderNamespace, "leader-namespace", "", "Namespace where leader configmap located")
 	flag.Parse()
-	logf.SetLogger(logf.ZapLogger(false))
+	logf.SetLogger(zap.New())
 	log := logf.Log.WithName("entrypoint")
 
 	handlerConf, err := nidhogg.GetConfig(configPath)
@@ -68,7 +70,7 @@ func main() {
 	// Create a new Cmd to provide shared dependencies and start components
 	log.Info("setting up manager")
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress:      metricsAddr,
+		Metrics:                 metricsserver.Options{BindAddress: metricsAddr},
 		LeaderElection:          leaderElection,
 		LeaderElectionID:        leaderConfigMap,
 		LeaderElectionNamespace: leaderNamespace,

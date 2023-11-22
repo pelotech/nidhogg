@@ -17,7 +17,6 @@ package node
 
 import (
 	"context"
-
 	"github.com/uswitch/nidhogg/pkg/nidhogg"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -40,34 +39,40 @@ func Add(mgr manager.Manager, cfg nidhogg.HandlerConfig) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager, cfg nidhogg.HandlerConfig) reconcile.Reconciler {
-	return &ReconcileNode{handler: nidhogg.NewHandler(mgr.GetClient(), mgr.GetRecorder("nidhogg"), cfg), scheme: mgr.GetScheme()}
+	eventRecorder := mgr.GetEventRecorderFor("nidhogg")
+	reconcilerHandler := nidhogg.NewHandler(mgr.GetClient(), eventRecorder, cfg)
+	return &ReconcileNode{reconcilerHandler, mgr.GetScheme()}
 }
 
 type nodeEnqueue struct{}
 
 // Update implements the interface
-func (e *nodeEnqueue) Update(evt event.UpdateEvent, q workqueue.RateLimitingInterface) {}
+func (e *nodeEnqueue) Update(ctx context.Context, evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
+}
 
 // Delete implements the interface
-func (e *nodeEnqueue) Delete(_ event.DeleteEvent, _ workqueue.RateLimitingInterface) {}
+func (e *nodeEnqueue) Delete(_ context.Context, _ event.DeleteEvent, _ workqueue.RateLimitingInterface) {
+}
 
 // Generic implements the interface
-func (e *nodeEnqueue) Generic(_ event.GenericEvent, _ workqueue.RateLimitingInterface) {}
+func (e *nodeEnqueue) Generic(_ context.Context, _ event.GenericEvent, _ workqueue.RateLimitingInterface) {
+}
 
 // Create adds the node to the queue, the node is created as NotReady and without daemonset pods
-func (e *nodeEnqueue) Create(evt event.CreateEvent, q workqueue.RateLimitingInterface) {
-	if evt.Meta == nil {
+func (e *nodeEnqueue) Create(ctx context.Context, evt event.CreateEvent, q workqueue.RateLimitingInterface) {
+	if evt.Object == nil {
 		return
 	}
 	q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-		Name: evt.Meta.GetName(),
+		Name: evt.Object.GetName(),
 	}})
 }
 
 type podEnqueue struct{}
 
 // Generic implements the interface
-func (e *podEnqueue) Generic(_ event.GenericEvent, _ workqueue.RateLimitingInterface) {}
+func (e *podEnqueue) Generic(_ context.Context, _ event.GenericEvent, _ workqueue.RateLimitingInterface) {
+}
 
 // canAddToQueue check if the Pod is associated to a node and is a daemonset pod
 func (e *podEnqueue) canAddToQueue(pod *corev1.Pod) bool {
@@ -82,7 +87,7 @@ func (e *podEnqueue) canAddToQueue(pod *corev1.Pod) bool {
 }
 
 // Create adds the node of the daemonset pod to the queue
-func (e *podEnqueue) Create(evt event.CreateEvent, q workqueue.RateLimitingInterface) {
+func (e *podEnqueue) Create(ctx context.Context, evt event.CreateEvent, q workqueue.RateLimitingInterface) {
 	pod, ok := evt.Object.(*corev1.Pod)
 	if !ok {
 		return
@@ -97,7 +102,7 @@ func (e *podEnqueue) Create(evt event.CreateEvent, q workqueue.RateLimitingInter
 }
 
 // Update adds the node of the updated daemonset pod to the queue
-func (e *podEnqueue) Update(evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
+func (e *podEnqueue) Update(ctx context.Context, evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	pod, ok := evt.ObjectNew.(*corev1.Pod)
 	if !ok {
 		return
@@ -111,7 +116,7 @@ func (e *podEnqueue) Update(evt event.UpdateEvent, q workqueue.RateLimitingInter
 }
 
 // Delete adds the node of the deleted daemonset pod to the queue
-func (e *podEnqueue) Delete(evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
+func (e *podEnqueue) Delete(ctx context.Context, evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
 	pod, ok := evt.Object.(*corev1.Pod)
 	if !ok {
 		return
@@ -136,12 +141,12 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to Node
-	err = c.Watch(&source.Kind{Type: &corev1.Node{}}, &nodeEnqueue{})
+	err = c.Watch(source.Kind(mgr.GetCache(), &corev1.Node{}), &nodeEnqueue{})
 	if err != nil {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &podEnqueue{})
+	err = c.Watch(source.Kind(mgr.GetCache(), &corev1.Pod{}), &podEnqueue{})
 	if err != nil {
 		return err
 	}
@@ -163,10 +168,10 @@ type ReconcileNode struct {
 // +kubebuilder:rbac:groups=core,resources=nodes/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 // +kubebuilder:rbac:groups=,resources=events,verbs=create;update;patch
-func (r *ReconcileNode) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileNode) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Node instance
 	instance := &corev1.Node{}
-	err := r.handler.Get(context.TODO(), request.NamespacedName, instance)
+	err := r.handler.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.

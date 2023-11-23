@@ -98,7 +98,7 @@ func NewHandler(c client.Client, r record.EventRecorder, conf HandlerConfig) *Ha
 }
 
 // HandleNode works out what taints need to be applied to the node
-func (h *Handler) HandleNode(instance *corev1.Node) (reconcile.Result, error) {
+func (h *Handler) HandleNode(ctx context.Context, instance *corev1.Node) (reconcile.Result, error) {
 
 	log := logf.Log.WithName("nidhogg")
 
@@ -107,7 +107,7 @@ func (h *Handler) HandleNode(instance *corev1.Node) (reconcile.Result, error) {
 		return reconcile.Result{}, nil
 	}
 
-	nodeCopy, taintChanges, err := h.calculateTaints(instance)
+	nodeCopy, taintChanges, err := h.calculateTaints(ctx, instance)
 	if err != nil {
 		taintOperationErrors.WithLabelValues("calculateTaints").Inc()
 		return reconcile.Result{}, fmt.Errorf("error caluclating taints for node: %v", err)
@@ -120,27 +120,42 @@ func (h *Handler) HandleNode(instance *corev1.Node) (reconcile.Result, error) {
 		}
 	}
 
-	var firstTimeReady string
-	var readyAnnotationKey = h.getTaintNamePrefix() + readySinceAnnotationSuffix
+	var readySinceKey = h.getTaintNamePrefix() + readySinceAnnotationSuffix
+	var readySinceValue string
 	if taintLess {
-		firstTimeReady = time.Now().Format("2006-01-02T15:04:05Z")
+		readySinceValue = time.Now().Format("2006-01-02T15:04:05Z")
 		if nodeCopy.Annotations == nil {
 			nodeCopy.Annotations = map[string]string{
-				readyAnnotationKey: firstTimeReady,
+				readySinceKey: readySinceValue,
 			}
-		} else if _, ok := nodeCopy.Annotations[readyAnnotationKey]; !ok {
-			nodeCopy.Annotations[readyAnnotationKey] = firstTimeReady
+		} else if _, ok := nodeCopy.Annotations[readySinceKey]; !ok {
+			nodeCopy.Annotations[readySinceKey] = readySinceValue
 		} else {
-			firstTimeReady = nodeCopy.Annotations[readyAnnotationKey]
+			readySinceValue = nodeCopy.Annotations[readySinceKey]
 		}
 	} else if nodeCopy.Annotations != nil {
-		firstTimeReady = nodeCopy.Annotations[readyAnnotationKey]
+		readySinceValue = nodeCopy.Annotations[readySinceKey]
 	}
 
 	if !reflect.DeepEqual(nodeCopy, instance) {
 		instance = nodeCopy
-		log.Info("Updating Node taints", "instance", instance.Name, "taints added", taintChanges.taintsAdded, "taints removed", taintChanges.taintsRemoved, "taintLess", taintLess, "firstTimeReady", firstTimeReady)
-		err := h.Update(context.TODO(), instance)
+		log.Info("Updating Node taints", "instance", instance.Name, "taints added", taintChanges.taintsAdded, "taints removed", taintChanges.taintsRemoved, "taintLess", taintLess, "readySinceValue", readySinceValue)
+
+		// TODO: if "Operation cannot be fulfilled on nodes [...] the object has been modified" issue persists.
+		//err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		//	var res corev1.Node
+		//	err := h.Get(ctx, types.NamespacedName{
+		//		Name:      instance.Name,
+		//		Namespace: instance.Namespace,
+		//	}, &res)
+		//	if err != nil {
+		//		return err
+		//	}
+		//	res.Annotations["Sample"] = "What I want to update from latest state"
+		//	return h.Update(ctx, instance)
+		//})
+		err := h.Update(ctx, instance)
+
 		if err != nil {
 			taintOperationErrors.WithLabelValues("nodeUpdate").Inc()
 			return reconcile.Result{}, err
@@ -155,13 +170,13 @@ func (h *Handler) HandleNode(instance *corev1.Node) (reconcile.Result, error) {
 		// this is a hack to make the event work on a non-namespaced object
 		nodeCopy.UID = types.UID(nodeCopy.Name)
 
-		h.recorder.Eventf(nodeCopy, corev1.EventTypeNormal, "TaintsChanged", "Taints added: %s, Taints removed: %s, TaintLess: %v, FirstTimeReady: %q", taintChanges.taintsAdded, taintChanges.taintsRemoved, taintLess, firstTimeReady)
+		h.recorder.Eventf(nodeCopy, corev1.EventTypeNormal, "TaintsChanged", "Taints added: %s, Taints removed: %s, TaintLess: %v, FirstTimeReady: %q", taintChanges.taintsAdded, taintChanges.taintsRemoved, taintLess, readySinceValue)
 	}
 
 	return reconcile.Result{}, nil
 }
 
-func (h *Handler) calculateTaints(instance *corev1.Node) (*corev1.Node, taintChanges, error) {
+func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*corev1.Node, taintChanges, error) {
 
 	nodeCopy := instance.DeepCopy()
 
@@ -179,7 +194,7 @@ func (h *Handler) calculateTaints(instance *corev1.Node) (*corev1.Node, taintCha
 
 		taint := fmt.Sprintf("%s/%s.%s", h.getTaintNamePrefix(), daemonset.Namespace, daemonset.Name)
 		// Get Pod for node
-		pod, err := h.getDaemonsetPod(instance.Name, daemonset)
+		pod, err := h.getDaemonsetPod(ctx, instance.Name, daemonset)
 		if err != nil {
 			return nil, taintChanges{}, fmt.Errorf("error fetching pods: %v", err)
 		}
@@ -214,10 +229,10 @@ func (h *Handler) getTaintNamePrefix() string {
 	return defaultTaintKeyPrefix
 }
 
-func (h *Handler) getDaemonsetPod(nodeName string, ds Daemonset) (*corev1.Pod, error) {
+func (h *Handler) getDaemonsetPod(ctx context.Context, nodeName string, ds Daemonset) (*corev1.Pod, error) {
 	opts := client.InNamespace(ds.Namespace)
 	pods := &corev1.PodList{}
-	err := h.List(context.TODO(), pods, opts)
+	err := h.List(ctx, pods, opts)
 	if err != nil {
 		return nil, err
 	}

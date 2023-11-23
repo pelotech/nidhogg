@@ -16,6 +16,14 @@ limitations under the License.
 package node
 
 import (
+	"context"
+	"github.com/onsi/gomega"
+	"github.com/uswitch/nidhogg/pkg/nidhogg"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"testing"
 	"time"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -29,39 +37,39 @@ var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Nam
 
 const timeout = time.Second * 5
 
-//func TestReconcile(t *testing.T) {
-//	g := gomega.NewGomegaWithT(t)
-//	instance := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
-//
-//	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
-//	// channel when it is finished.
-//	mgr, err := manager.New(cfg, manager.Options{})
-//	g.Expect(err).NotTo(gomega.HaveOccurred())
-//	c = mgr.GetClient()
-//
-//	handler := nidhogg.HandlerConfig{}
-//	handler.BuildSelectors()
-//
-//	recFn, requests := SetupTestReconcile(newReconciler(mgr, handler))
-//	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
-//
-//	stopMgr, mgrStopped := StartTestManager(mgr, g)
-//
-//	defer func() {
-//		close(stopMgr)
-//		mgrStopped.Wait()
-//	}()
-//
-//	// Create the Node object and expect the Reconcile
-//	err = c.Create(context.TODO(), instance)
-//	// The instance object may not be a valid object because it might be missing some required fields.
-//	// Please modify the instance object by adding required fields and then remove the following if statement.
-//	if apierrors.IsInvalid(err) {
-//		t.Logf("failed to create object, got an invalid object error: %v", err)
-//		return
-//	}
-//	g.Expect(err).NotTo(gomega.HaveOccurred())
-//	defer c.Delete(context.TODO(), instance)
-//	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-//
-//}
+func TestReconcile(t *testing.T) {
+	g := gomega.NewWithT(t)
+	instance := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	c = mgr.GetClient()
+
+	handler := nidhogg.HandlerConfig{}
+	_ = handler.BuildSelectors()
+
+	recFn, requests := SetupTestReconcile(newReconciler(mgr, handler))
+	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
+
+	_, cancel, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		cancel()
+		mgrStopped.Wait()
+	}()
+
+	// Create the Node object and expect the Reconcile
+	err = c.Create(context.TODO(), instance)
+	// The instance object may not be a valid object because it might be missing some required fields.
+	// Please modify the instance object by adding required fields and then remove the following if statement.
+	if apierrors.IsInvalid(err) {
+		t.Logf("failed to create object, got an invalid object error: %v", err)
+		return
+	}
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), instance)
+	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+
+}

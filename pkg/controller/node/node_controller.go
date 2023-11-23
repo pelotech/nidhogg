@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -44,10 +45,12 @@ func newReconciler(mgr manager.Manager, cfg nidhogg.HandlerConfig) reconcile.Rec
 	return &ReconcileNode{reconcilerHandler, mgr.GetScheme()}
 }
 
+var _ handler.EventHandler = &nodeEnqueue{}
+
 type nodeEnqueue struct{}
 
 // Update implements the interface
-func (e *nodeEnqueue) Update(ctx context.Context, evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
+func (e *nodeEnqueue) Update(_ context.Context, _ event.UpdateEvent, _ workqueue.RateLimitingInterface) {
 }
 
 // Delete implements the interface
@@ -59,7 +62,7 @@ func (e *nodeEnqueue) Generic(_ context.Context, _ event.GenericEvent, _ workque
 }
 
 // Create adds the node to the queue, the node is created as NotReady and without daemonset pods
-func (e *nodeEnqueue) Create(ctx context.Context, evt event.CreateEvent, q workqueue.RateLimitingInterface) {
+func (e *nodeEnqueue) Create(_ context.Context, evt event.CreateEvent, q workqueue.RateLimitingInterface) {
 	if evt.Object == nil {
 		return
 	}
@@ -67,6 +70,8 @@ func (e *nodeEnqueue) Create(ctx context.Context, evt event.CreateEvent, q workq
 		Name: evt.Object.GetName(),
 	}})
 }
+
+var _ handler.EventHandler = &podEnqueue{}
 
 type podEnqueue struct{}
 
@@ -87,7 +92,7 @@ func (e *podEnqueue) canAddToQueue(pod *corev1.Pod) bool {
 }
 
 // Create adds the node of the daemonset pod to the queue
-func (e *podEnqueue) Create(ctx context.Context, evt event.CreateEvent, q workqueue.RateLimitingInterface) {
+func (e *podEnqueue) Create(_ context.Context, evt event.CreateEvent, q workqueue.RateLimitingInterface) {
 	pod, ok := evt.Object.(*corev1.Pod)
 	if !ok {
 		return
@@ -102,7 +107,7 @@ func (e *podEnqueue) Create(ctx context.Context, evt event.CreateEvent, q workqu
 }
 
 // Update adds the node of the updated daemonset pod to the queue
-func (e *podEnqueue) Update(ctx context.Context, evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
+func (e *podEnqueue) Update(_ context.Context, evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	pod, ok := evt.ObjectNew.(*corev1.Pod)
 	if !ok {
 		return
@@ -116,7 +121,7 @@ func (e *podEnqueue) Update(ctx context.Context, evt event.UpdateEvent, q workqu
 }
 
 // Delete adds the node of the deleted daemonset pod to the queue
-func (e *podEnqueue) Delete(ctx context.Context, evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
+func (e *podEnqueue) Delete(_ context.Context, evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
 	pod, ok := evt.Object.(*corev1.Pod)
 	if !ok {
 		return
@@ -181,5 +186,5 @@ func (r *ReconcileNode) Reconcile(ctx context.Context, request reconcile.Request
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-	return r.handler.HandleNode(instance)
+	return r.handler.HandleNode(ctx, instance)
 }

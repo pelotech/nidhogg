@@ -103,8 +103,8 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 	log := logf.Log.WithName("nidhogg")
 
 	// Fetch the Node instance
-	instance := &corev1.Node{}
-	err := h.Get(ctx, request.NamespacedName, instance)
+	latestNode := &corev1.Node{}
+	err := h.Get(ctx, request.NamespacedName, latestNode)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
@@ -116,18 +116,18 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 	}
 
 	//check whether node matches the nodeSelector
-	if !h.config.Selector.Matches(labels.Set(instance.Labels)) {
+	if !h.config.Selector.Matches(labels.Set(latestNode.Labels)) {
 		return reconcile.Result{}, nil
 	}
 
-	nodeCopy, taintChanges, err := h.calculateTaints(ctx, instance)
+	updatedNode, taintChanges, err := h.calculateTaints(ctx, latestNode)
 	if err != nil {
 		taintOperationErrors.WithLabelValues("calculateTaints").Inc()
 		return reconcile.Result{}, fmt.Errorf("error caluclating taints for node: %v", err)
 	}
 
 	taintLess := true
-	for _, taint := range nodeCopy.Spec.Taints {
+	for _, taint := range updatedNode.Spec.Taints {
 		if strings.HasPrefix(taint.Key, h.getTaintNamePrefix()) {
 			taintLess = false
 		}
@@ -137,24 +137,24 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 	var readySinceValue string
 	if taintLess {
 		readySinceValue = time.Now().Format("2006-01-02T15:04:05Z")
-		if nodeCopy.Annotations == nil {
-			nodeCopy.Annotations = map[string]string{
+		if updatedNode.Annotations == nil {
+			updatedNode.Annotations = map[string]string{
 				readySinceKey: readySinceValue,
 			}
-		} else if _, ok := nodeCopy.Annotations[readySinceKey]; !ok {
-			nodeCopy.Annotations[readySinceKey] = readySinceValue
+		} else if _, ok := updatedNode.Annotations[readySinceKey]; !ok {
+			updatedNode.Annotations[readySinceKey] = readySinceValue
 		} else {
-			readySinceValue = nodeCopy.Annotations[readySinceKey]
+			readySinceValue = updatedNode.Annotations[readySinceKey]
 		}
-	} else if nodeCopy.Annotations != nil {
-		readySinceValue = nodeCopy.Annotations[readySinceKey]
+	} else if updatedNode.Annotations != nil {
+		readySinceValue = updatedNode.Annotations[readySinceKey]
 	}
 
-	if !reflect.DeepEqual(nodeCopy, instance) {
-		instance = nodeCopy
-		log.Info("Updating Node taints", "instance", instance.Name, "taints added", taintChanges.taintsAdded, "taints removed", taintChanges.taintsRemoved, "taintLess", taintLess, "readySinceValue", readySinceValue)
+	if !reflect.DeepEqual(updatedNode, latestNode) {
+		log.Info("Updating Node taints", "instance", updatedNode.Name, "taints added", taintChanges.taintsAdded, "taints removed", taintChanges.taintsRemoved, "taintLess", taintLess, "readySinceValue", readySinceValue)
 
-		err := h.Update(ctx, instance)
+		err := h.Patch(ctx, updatedNode, client.MergeFrom(latestNode))
+		//err := h.Update(ctx, updatedNode)
 
 		if err != nil {
 			taintOperationErrors.WithLabelValues("nodeUpdate").Inc()
@@ -170,9 +170,9 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 		}
 
 		// this is a hack to make the event work on a non-namespaced object
-		nodeCopy.UID = types.UID(nodeCopy.Name)
+		updatedNode.UID = types.UID(updatedNode.Name)
 
-		h.recorder.Eventf(nodeCopy, corev1.EventTypeNormal, "TaintsChanged", "Taints added: %s, Taints removed: %s, TaintLess: %v, FirstTimeReady: %q", taintChanges.taintsAdded, taintChanges.taintsRemoved, taintLess, readySinceValue)
+		h.recorder.Eventf(updatedNode, corev1.EventTypeNormal, "TaintsChanged", "Taints added: %s, Taints removed: %s, TaintLess: %v, FirstTimeReady: %q", taintChanges.taintsAdded, taintChanges.taintsRemoved, taintLess, readySinceValue)
 	}
 
 	return reconcile.Result{}, nil

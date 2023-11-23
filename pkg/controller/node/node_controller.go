@@ -22,12 +22,10 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -175,15 +173,5 @@ type ReconcileNode struct {
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 // +kubebuilder:rbac:groups=,resources=events,verbs=create;update;patch
 func (r *ReconcileNode) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	var result reconcile.Result
-	var err error
-	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		result, err = r.handler.HandleNode(ctx, request)
-		if err != nil {
-			logf.Log.Error(err, "RetryOnConflict() - Node state has changed between get() and update().")
-		}
-		return err
-	})
-
-	return result, err
+	return r.handler.HandleNode(ctx, request)
 }

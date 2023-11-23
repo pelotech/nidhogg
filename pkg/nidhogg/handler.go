@@ -199,7 +199,7 @@ func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*
 			return nil, taintChanges{}, fmt.Errorf("error fetching pods: %v", err)
 		}
 
-		if pod != nil && h.podReady(pod) {
+		if pod != nil && podReady(pod) {
 			// if the taint is in the taintsToRemove map, it'll be removed
 			continue
 		}
@@ -215,10 +215,19 @@ func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*
 		nodeCopy.Spec.Taints = addTaint(nodeCopy.Spec.Taints, taint)
 	}
 	for taint := range taintsToRemove {
+		h.applyTaintRemovalDelay()
 		nodeCopy.Spec.Taints = removeTaint(nodeCopy.Spec.Taints, taint)
 		changes.taintsRemoved = append(changes.taintsRemoved, taint)
 	}
 	return nodeCopy, changes, nil
+}
+
+func (h *Handler) applyTaintRemovalDelay() {
+	if h.config.TaintRemovalDelayInSeconds == 0 {
+		return
+	}
+	logf.Log.Info("DaemonSet's Pod is running, a delay has been set before removing taint.", "delay", h.config.TaintRemovalDelayInSeconds)
+	time.Sleep(time.Duration(h.config.TaintRemovalDelayInSeconds) * time.Second)
 }
 
 func (h *Handler) getTaintNamePrefix() string {
@@ -250,16 +259,10 @@ func (h *Handler) getDaemonsetPod(ctx context.Context, nodeName string, ds Daemo
 	return nil, nil
 }
 
-func (h *Handler) podReady(pod *corev1.Pod) bool {
+func podReady(pod *corev1.Pod) bool {
 	if pod.Status.Phase != corev1.PodRunning {
 		return false
 	}
-
-	if h.config.TaintRemovalDelayInSeconds != 0 {
-		logf.Log.Info("DaemonSet's Pod is running. Holding %d seconds before removing taint.", h.config.TaintRemovalDelayInSeconds)
-		time.Sleep(time.Duration(h.config.TaintRemovalDelayInSeconds) * time.Second)
-	}
-
 	return true
 }
 

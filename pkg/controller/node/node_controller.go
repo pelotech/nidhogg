@@ -19,10 +19,10 @@ import (
 	"context"
 	"github.com/uswitch/nidhogg/pkg/nidhogg"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -159,9 +159,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-var _ reconcile.Reconciler = &ReconcileNode{}
-
 // ReconcileNode reconciles a Node object
+var _ reconcile.Reconciler = &ReconcileNode{}
 type ReconcileNode struct {
 	handler *nidhogg.Handler
 	scheme  *runtime.Scheme
@@ -174,17 +173,12 @@ type ReconcileNode struct {
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 // +kubebuilder:rbac:groups=,resources=events,verbs=create;update;patch
 func (r *ReconcileNode) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	// Fetch the Node instance
-	instance := &corev1.Node{}
-	err := r.handler.Get(ctx, request.NamespacedName, instance)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			// Object not found, return.  Created objects are automatically garbage collected.
-			// For additional cleanup logic use finalizers.
-			return reconcile.Result{}, nil
-		}
-		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
-	}
-	return r.handler.HandleNode(ctx, instance)
+	var result reconcile.Result
+	var err error
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		result, _ = r.handler.HandleNode(ctx, request)
+		return err
+	})
+
+	return result, err
 }

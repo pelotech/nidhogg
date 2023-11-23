@@ -3,6 +3,7 @@ package nidhogg
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"reflect"
 	"strings"
 	"time"
@@ -98,9 +99,21 @@ func NewHandler(c client.Client, r record.EventRecorder, conf HandlerConfig) *Ha
 }
 
 // HandleNode works out what taints need to be applied to the node
-func (h *Handler) HandleNode(ctx context.Context, instance *corev1.Node) (reconcile.Result, error) {
-
+func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := logf.Log.WithName("nidhogg")
+
+	// Fetch the Node instance
+	instance := &corev1.Node{}
+	err := h.Get(ctx, request.NamespacedName, instance)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Object not found, return.  Created objects are automatically garbage collected.
+			// For additional cleanup logic use finalizers.
+			return reconcile.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		return reconcile.Result{}, err
+	}
 
 	//check whether node matches the nodeSelector
 	if !h.config.Selector.Matches(labels.Set(instance.Labels)) {
@@ -141,19 +154,6 @@ func (h *Handler) HandleNode(ctx context.Context, instance *corev1.Node) (reconc
 		instance = nodeCopy
 		log.Info("Updating Node taints", "instance", instance.Name, "taints added", taintChanges.taintsAdded, "taints removed", taintChanges.taintsRemoved, "taintLess", taintLess, "readySinceValue", readySinceValue)
 
-		// TODO: if "Operation cannot be fulfilled on nodes [...] the object has been modified" issue persists.
-		//err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		//	var res corev1.Node
-		//	err := h.Get(ctx, types.NamespacedName{
-		//		Name:      instance.Name,
-		//		Namespace: instance.Namespace,
-		//	}, &res)
-		//	if err != nil {
-		//		return err
-		//	}
-		//	res.Annotations["Sample"] = "What I want to update from latest state"
-		//	return h.Update(ctx, instance)
-		//})
 		err := h.Update(ctx, instance)
 
 		if err != nil {

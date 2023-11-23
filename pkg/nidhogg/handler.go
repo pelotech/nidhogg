@@ -159,6 +159,8 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 		if err != nil {
 			taintOperationErrors.WithLabelValues("nodeUpdate").Inc()
 			return reconcile.Result{}, err
+		} else {
+			log.Info("Node taints updated.")
 		}
 		for _, taintAdded := range taintChanges.taintsAdded {
 			taintOperations.WithLabelValues(taintOperationAdded, taintAdded).Inc()

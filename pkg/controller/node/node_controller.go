@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -161,6 +162,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 // ReconcileNode reconciles a Node object
 var _ reconcile.Reconciler = &ReconcileNode{}
+
 type ReconcileNode struct {
 	handler *nidhogg.Handler
 	scheme  *runtime.Scheme
@@ -176,7 +178,10 @@ func (r *ReconcileNode) Reconcile(ctx context.Context, request reconcile.Request
 	var result reconcile.Result
 	var err error
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		result, _ = r.handler.HandleNode(ctx, request)
+		result, err = r.handler.HandleNode(ctx, request)
+		if err != nil {
+			logf.Log.Error(err, "RetryOnConflict() - Node state has changed between get() and update().")
+		}
 		return err
 	})
 

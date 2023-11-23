@@ -19,11 +19,10 @@ import (
 )
 
 const (
-	// TODO: make taintKey a variable
-	taintKey                 = "nidhogg.uswitch.com"
-	taintOperationAdded      = "added"
-	taintOperationRemoved    = "removed"
-	annotationFirstTimeReady = taintKey + "/first-time-ready"
+	defaultTaintKeyPrefix      = "nidhogg.uswitch.com"
+	taintOperationAdded        = "added"
+	taintOperationRemoved      = "removed"
+	readySinceAnnotationSuffix = "/ready-since"
 )
 
 var (
@@ -62,9 +61,11 @@ type Handler struct {
 
 // HandlerConfig contains the options for Nidhogg
 type HandlerConfig struct {
-	Daemonsets   []Daemonset `json:"daemonsets" yaml:"daemonsets"`
-	NodeSelector []string    `json:"nodeSelector" yaml:"nodeSelector"`
-	Selector     labels.Selector
+	TaintNamePrefix            string      `json:"taintNamePrefix,omitempty" yaml:"taintNamePrefix,omitempty"`
+	TaintRemovalDelayInSeconds int         `json:"taintRemovalDelayInSeconds,omitempty" yaml:"taintRemovalDelayInSeconds,omitempty"`
+	Daemonsets                 []Daemonset `json:"daemonsets" yaml:"daemonsets"`
+	NodeSelector               []string    `json:"nodeSelector" yaml:"nodeSelector"`
+	Selector                   labels.Selector
 }
 
 func (hc *HandlerConfig) BuildSelectors() error {
@@ -114,25 +115,26 @@ func (h *Handler) HandleNode(instance *corev1.Node) (reconcile.Result, error) {
 
 	taintLess := true
 	for _, taint := range nodeCopy.Spec.Taints {
-		if strings.HasPrefix(taint.Key, taintKey) {
+		if strings.HasPrefix(taint.Key, h.getTaintNamePrefix()) {
 			taintLess = false
 		}
 	}
 
 	var firstTimeReady string
+	var readyAnnotationKey = h.getTaintNamePrefix() + readySinceAnnotationSuffix
 	if taintLess {
 		firstTimeReady = time.Now().Format("2006-01-02T15:04:05Z")
 		if nodeCopy.Annotations == nil {
 			nodeCopy.Annotations = map[string]string{
-				annotationFirstTimeReady: firstTimeReady,
+				readyAnnotationKey: firstTimeReady,
 			}
-		} else if _, ok := nodeCopy.Annotations[annotationFirstTimeReady]; !ok {
-			nodeCopy.Annotations[annotationFirstTimeReady] = firstTimeReady
+		} else if _, ok := nodeCopy.Annotations[readyAnnotationKey]; !ok {
+			nodeCopy.Annotations[readyAnnotationKey] = firstTimeReady
 		} else {
-			firstTimeReady = nodeCopy.Annotations[annotationFirstTimeReady]
+			firstTimeReady = nodeCopy.Annotations[readyAnnotationKey]
 		}
 	} else if nodeCopy.Annotations != nil {
-		firstTimeReady = nodeCopy.Annotations[annotationFirstTimeReady]
+		firstTimeReady = nodeCopy.Annotations[readyAnnotationKey]
 	}
 
 	if !reflect.DeepEqual(nodeCopy, instance) {
@@ -169,20 +171,20 @@ func (h *Handler) calculateTaints(instance *corev1.Node) (*corev1.Node, taintCha
 	for _, taint := range nodeCopy.Spec.Taints {
 		// we could have some older taints from a different configuration file
 		// storing them all to reconcile from a previous state
-		if strings.HasPrefix(taint.Key, taintKey) {
+		if strings.HasPrefix(taint.Key, h.getTaintNamePrefix()) {
 			taintsToRemove[taint.Key] = struct{}{}
 		}
 	}
 	for _, daemonset := range h.config.Daemonsets {
 
-		taint := fmt.Sprintf("%s/%s.%s", taintKey, daemonset.Namespace, daemonset.Name)
+		taint := fmt.Sprintf("%s/%s.%s", h.getTaintNamePrefix(), daemonset.Namespace, daemonset.Name)
 		// Get Pod for node
 		pod, err := h.getDaemonsetPod(instance.Name, daemonset)
 		if err != nil {
 			return nil, taintChanges{}, fmt.Errorf("error fetching pods: %v", err)
 		}
 
-		if pod != nil && podReady(pod) {
+		if pod != nil && h.podReady(pod) {
 			// if the taint is in the taintsToRemove map, it'll be removed
 			continue
 		}
@@ -202,6 +204,14 @@ func (h *Handler) calculateTaints(instance *corev1.Node) (*corev1.Node, taintCha
 		changes.taintsRemoved = append(changes.taintsRemoved, taint)
 	}
 	return nodeCopy, changes, nil
+}
+
+func (h *Handler) getTaintNamePrefix() string {
+	if h.config.TaintNamePrefix != "" {
+		return h.config.TaintNamePrefix
+	}
+
+	return defaultTaintKeyPrefix
 }
 
 func (h *Handler) getDaemonsetPod(nodeName string, ds Daemonset) (*corev1.Pod, error) {
@@ -225,13 +235,17 @@ func (h *Handler) getDaemonsetPod(nodeName string, ds Daemonset) (*corev1.Pod, e
 	return nil, nil
 }
 
-func podReady(pod *corev1.Pod) bool {
-	if pod.Status.Phase == corev1.PodRunning {
-		logf.Log.Info("DaemonSet's Pod is running. Holding 10 seconds before removing taint.")
-		time.Sleep(10 * time.Second)
-		return true
+func (h *Handler) podReady(pod *corev1.Pod) bool {
+	if pod.Status.Phase != corev1.PodRunning {
+		return false
 	}
-	return false
+
+	if h.config.TaintRemovalDelayInSeconds != 0 {
+		logf.Log.Info("DaemonSet's Pod is running. Holding %d seconds before removing taint.", h.config.TaintRemovalDelayInSeconds)
+		time.Sleep(time.Duration(h.config.TaintRemovalDelayInSeconds) * time.Second)
+	}
+
+	return true
 }
 
 func addTaint(taints []corev1.Taint, taintName string) []corev1.Taint {

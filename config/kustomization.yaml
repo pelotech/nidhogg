@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Adds namespace to all resources.
+namespace: nidhogg-system
+
+# Value of this field is prepended to the
+# names of all resources, e.g. a deployment named
+# "wordpress" becomes "alices-wordpress".
+# Note that it should also match with the prefix (text before '-') of the namespace
+# field above.
+namePrefix: nidhogg-
+
+resources:
+  - ./resources.yaml
+  - ./rbac.yaml
+  - ./leader-election-rbac.yaml
+
+#patches:
+# Expose the prometheus metrics on default port
+#  - target:
+#      group: apps
+#      version: v1
+#      kind: StatefulSet
+#    path: ./overlays/nidhogg-statefulset-prometheus-patch.yaml
+
+images:
+  - name: controller
+    newName: chomatdam/nidhogg
+    newTag: 1.0.0
+
+replacements:
+  - source:
+      version: v1
+      kind: Secret
+      name: webhook-server-secret
+      fieldPath: metadata.name
+    targets:
+      - select:
+          group: apps
+          version: v1
+          kind: StatefulSet
+          name: controller-manager
+        fieldPaths:
+          - spec.template.spec.containers.0.env.[name=SECRET_NAME].value

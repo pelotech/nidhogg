@@ -101,14 +101,16 @@ metadata:
   namespace: system
 data:
   config.json: |
-     {
-       "nodeSelector": [
-         "node-role.kubernetes.io/node"
-       ],
-       "daemonsets": [
-         {
-           "name": "kiam",
-           "namespace": "kube-system"
-         }
-       ]
-     }
+    {
+      "taintNamePrefix": "required.node.taint.prefix.daemonset.tolerations.have.to.start.with",
+      "taintRemovalDelayInSeconds": 5, 
+      "nodeSelector": [
+        "path.to.node.selector.where.the.ds.starts"
+      ],
+      "daemonsets": [
+        {
+          "name": "daemonset.being.observed",
+          "namespace": "namespace"
+        }
+      ]
+    }

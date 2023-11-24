@@ -154,8 +154,8 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 	if !reflect.DeepEqual(updatedNode, latestNode) {
 		log.Info("Updating Node taints", "instance", updatedNode.Name, "taints added", taintChanges.taintsAdded, "taints removed", taintChanges.taintsRemoved, "taintLess", taintLess, "readySinceValue", readySinceValue)
 
-		err := h.Patch(ctx, updatedNode, client.StrategicMergeFrom(latestNode))
-		//err := h.Update(ctx, updatedNode)
+		//err := h.Patch(ctx, updatedNode, client.StrategicMergeFrom(latestNode))
+		err := h.Update(ctx, updatedNode)
 
 		if err != nil {
 			taintOperationErrors.WithLabelValues("nodeUpdate").Inc()
@@ -203,8 +203,6 @@ func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*
 		}
 
 		if len(pods) > 0 && utils.AllTrue(pods, func(pod *corev1.Pod) bool { return podReady(pod) }) {
-			logf.Log.Info("Pods are all running.",
-				"node", instance.Name, "daemonset", daemonset.Name, "namespace", daemonset.Namespace)
 			// if the taint is in the taintsToRemove map, it'll be removed
 			continue
 		}
@@ -231,7 +229,7 @@ func (h *Handler) applyTaintRemovalDelay() {
 	if h.config.TaintRemovalDelayInSeconds == 0 {
 		return
 	}
-	logf.Log.Info("DaemonSet's Pod is running, a delay has been set before removing taint.", "delay", h.config.TaintRemovalDelayInSeconds)
+	logf.Log.Info("Daemonset is running, a delay has been set before removing taint.", "delay", h.config.TaintRemovalDelayInSeconds)
 	time.Sleep(time.Duration(h.config.TaintRemovalDelayInSeconds) * time.Second)
 }
 

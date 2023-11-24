@@ -262,10 +262,12 @@ func (h *Handler) getDaemonsetPods(ctx context.Context, nodeName string, ds Daem
 }
 
 func podReady(pod *corev1.Pod) bool {
-	if pod.Status.Phase != corev1.PodRunning {
-		return false
+	for _, condition := range pod.Status.Conditions {
+		if condition.Type == corev1.PodReady {
+			return condition.Status == corev1.ConditionTrue
+		}
 	}
-	return true
+	return false
 }
 
 func addTaint(taints []corev1.Taint, taintName string) []corev1.Taint {

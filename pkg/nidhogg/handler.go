@@ -3,6 +3,7 @@ package nidhogg
 import (
 	"context"
 	"fmt"
+	"github.com/uswitch/nidhogg/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"reflect"
 	"strings"
@@ -153,7 +154,7 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 	if !reflect.DeepEqual(updatedNode, latestNode) {
 		log.Info("Updating Node taints", "instance", updatedNode.Name, "taints added", taintChanges.taintsAdded, "taints removed", taintChanges.taintsRemoved, "taintLess", taintLess, "readySinceValue", readySinceValue)
 
-		err := h.Patch(ctx, updatedNode, client.MergeFrom(latestNode))
+		err := h.Patch(ctx, updatedNode, client.StrategicMergeFrom(latestNode))
 		//err := h.Update(ctx, updatedNode)
 
 		if err != nil {
@@ -196,12 +197,12 @@ func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*
 
 		taint := fmt.Sprintf("%s/%s.%s", h.getTaintNamePrefix(), daemonset.Namespace, daemonset.Name)
 		// Get Pod for node
-		pod, err := h.getDaemonsetPod(ctx, instance.Name, daemonset)
+		pods, err := h.getDaemonsetPods(ctx, instance.Name, daemonset)
 		if err != nil {
 			return nil, taintChanges{}, fmt.Errorf("error fetching pods: %v", err)
 		}
 
-		if pod != nil && podReady(pod) {
+		if len(pods) > 0 && utils.AllTrue(pods, func(pod *corev1.Pod) bool { return podReady(pod) }) {
 			// if the taint is in the taintsToRemove map, it'll be removed
 			continue
 		}
@@ -240,7 +241,7 @@ func (h *Handler) getTaintNamePrefix() string {
 	return defaultTaintKeyPrefix
 }
 
-func (h *Handler) getDaemonsetPod(ctx context.Context, nodeName string, ds Daemonset) (*corev1.Pod, error) {
+func (h *Handler) getDaemonsetPods(ctx context.Context, nodeName string, ds Daemonset) ([]*corev1.Pod, error) {
 	opts := client.InNamespace(ds.Namespace)
 	pods := &corev1.PodList{}
 	err := h.List(ctx, pods, opts)
@@ -248,17 +249,16 @@ func (h *Handler) getDaemonsetPod(ctx context.Context, nodeName string, ds Daemo
 		return nil, err
 	}
 
+	matchingPods := make([]*corev1.Pod, 0)
 	for _, pod := range pods.Items {
 		for _, owner := range pod.OwnerReferences {
-			if owner.Name == ds.Name {
-				if pod.Spec.NodeName == nodeName {
-					return &pod, nil
-				}
+			if owner.Name == ds.Name && pod.Spec.NodeName == nodeName {
+				matchingPods = append(matchingPods, &pod)
 			}
 		}
 	}
 
-	return nil, nil
+	return matchingPods, nil
 }
 
 func podReady(pod *corev1.Pod) bool {

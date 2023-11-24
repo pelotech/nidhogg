@@ -99,7 +99,7 @@ func NewHandler(c client.Client, r record.EventRecorder, conf HandlerConfig) *Ha
 	return &Handler{Client: c, recorder: r, config: conf}
 }
 
-// HandleNode works out what taints need to be applied to the node
+// HandleNode works out what taints need to be applied to the nodeName
 func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := logf.Log.WithName("nidhogg")
 
@@ -116,7 +116,7 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
-	//check whether node matches the nodeSelector
+	//check whether nodeName matches the nodeSelector
 	if !h.config.Selector.Matches(labels.Set(latestNode.Labels)) {
 		return reconcile.Result{}, nil
 	}
@@ -124,7 +124,7 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 	updatedNode, taintChanges, err := h.calculateTaints(ctx, latestNode)
 	if err != nil {
 		taintOperationErrors.WithLabelValues("calculateTaints").Inc()
-		return reconcile.Result{}, fmt.Errorf("error caluclating taints for node: %v", err)
+		return reconcile.Result{}, fmt.Errorf("error caluclating taints for nodeName: %v", err)
 	}
 
 	taintLess := true
@@ -196,7 +196,7 @@ func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*
 	for _, daemonset := range h.config.Daemonsets {
 
 		taint := fmt.Sprintf("%s/%s.%s", h.getTaintNamePrefix(), daemonset.Namespace, daemonset.Name)
-		// Get Pod for node
+		// Get Pod for nodeName
 		pods, err := h.getDaemonsetPods(ctx, instance.Name, daemonset)
 		if err != nil {
 			return nil, taintChanges{}, fmt.Errorf("error fetching pods: %v", err)

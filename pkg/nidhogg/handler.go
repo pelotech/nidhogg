@@ -203,6 +203,8 @@ func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*
 		}
 
 		if len(pods) > 0 && utils.AllTrue(pods, func(pod *corev1.Pod) bool { return podReady(pod) }) {
+			logf.Log.Info("Pods are all running.",
+				"node", instance.Name, "daemonset", daemonset.Name, "namespace", daemonset.Namespace)
 			// if the taint is in the taintsToRemove map, it'll be removed
 			continue
 		}

@@ -1,0 +1,8 @@
+site_name: nidhogg
+site_description: Nidhogg is a controller that taints nodes based on whether a Pod from a specific Daemonset is running on them.
+nav:
+  - Home: README.md
+
+plugins:
+  - techdocs-core
+  - monorepo

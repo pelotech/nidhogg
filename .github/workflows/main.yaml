@@ -1,12 +1,16 @@
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+    tags: [ 'v*' ]
+    paths-ignore:
+      - 'README.md'
+      - 'gitops/**'
+      - 'docs/**'
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: read
       packages: write
     steps:
@@ -19,9 +23,39 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker images
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            # tag event
+            type=ref,event=tag
+      - name: sha short
+        if: github.ref_type == 'branch'
+        id: sha
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Build and push Docker image sha
+        if: github.ref_type == 'branch'
         uses: docker/build-push-action@v3
         with:
           context: .
+          file: Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          build-args: |
+            BUILD_VERSION=${{ steps.sha.outputs.sha_short }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: Build and push Docker image tag
+        uses: docker/build-push-action@v3
+        if: github.ref_type == 'tag'
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          build-args: |
+            BUILD_VERSION=${{ github.ref_name }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

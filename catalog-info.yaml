@@ -1,0 +1,13 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: nidhogg
+  description: Nidhogg is a controller that taints nodes based on whether a Pod from a specific Daemonset is running on them.
+  # Example for optional annotations
+  annotations:
+    github.com/project-slug: pelotech/nidhogg
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: service
+  owner: group:pelotech/leads
+  lifecycle: production

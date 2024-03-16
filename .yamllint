@@ -3,3 +3,8 @@ extends: relaxed
 rules:
   line-length: disable
   commas: disable
+  indentation:
+    indent-sequences: whatever
+
+ignore: |
+  *templates/

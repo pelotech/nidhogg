@@ -1,4 +1,6 @@
-
+![main](https://github.com/pelotech/nidhogg/actions/workflows/main.yaml/badge.svg)
+![pre-commit](https://github.com/pelotech/nidhogg/actions/workflows/pre-commit.yaml/badge.svg)
+![publish-chart](https://github.com/pelotech/nidhogg/actions/workflows/publish-chart.yaml/badge.svg)
 
 # Nidhogg
 
@@ -58,9 +60,15 @@ spec:
 ```
 
 ## Deploying
-Docker images can be found at ghcr.io/pelotech/nidhogg
+Docker images can be found at https://ghcr.io/pelotech/nidhogg
 
-Example [Kustomize](https://github.com/kubernetes-sigs/kustomize) manifests can be found  [here](/config) to quickly deploy this to a cluster.
+### helm
+
+We publish a helm chart to https://ghcr.io/pelotech/charts/nidhogg
+
+### kustomize
+
+[Kustomize](https://github.com/kubernetes-sigs/kustomize) manifests can be found  [here](/kustomize) to quickly deploy this to a cluster.
 
 ## Flags
 ```

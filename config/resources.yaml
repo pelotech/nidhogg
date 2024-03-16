@@ -49,17 +49,17 @@ spec:
         imagePullPolicy: Always
         name: manager
         args:
-         - --config-file=/config/config.json
-         - --leader-election
-         - --leader-namespace=nidhogg-system
-         - --leader-configmap=nidhogg-election
+        - --config-file=/config/config.json
+        - --leader-election
+        - --leader-namespace=nidhogg-system
+        - --leader-configmap=nidhogg-election
         env:
-          - name: POD_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-          - name: SECRET_NAME
-            value: $(WEBHOOK_SECRET_NAME)
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: SECRET_NAME
+          value: $(WEBHOOK_SECRET_NAME)
         resources:
           limits:
             memory: 200Mi
@@ -103,7 +103,7 @@ data:
   config.json: |
     {
       "taintNamePrefix": "required.node.taint.prefix.daemonset.tolerations.have.to.start.with",
-      "taintRemovalDelayInSeconds": 5, 
+      "taintRemovalDelayInSeconds": 5,
       "nodeSelector": [
         "path.to.node.selector.where.the.ds.starts"
       ],

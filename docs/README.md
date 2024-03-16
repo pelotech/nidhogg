@@ -1,14 +1,4 @@
-🚨 THIS REPO IS NOW BEING ABANDONED 🚨
 
-⚠️⚠️⚠️⚠️⚠️⚠️ Please read ⚠️⚠️⚠️⚠️⚠️⚠️
-
-If you are interested in using a maintened fork of this repo, please use [pelotech-nidhogg](https://github.com/pelotech/nidhogg), the fork that the engineering team at Pelotech have kindly agreed to maintain.
-
-See [this issue for more details](https://github.com/uswitch/nidhogg/issues/43)
-
-⚠️⚠️⚠️⚠️⚠️⚠️ END of please read ⚠️⚠️⚠️⚠️⚠️⚠️
-
-We are only a small team and we don't have the capacity to maintain a tool we don't use anymore, so from now on we will be moving this repo to Abandoned but we are happy that a team like the one at Pelotech is investing in this solution and giving back to the open source community by maintaining an active fork. 
 
 # Nidhogg
 
@@ -33,7 +23,7 @@ nodeSelector:
   node-role.kubernetes.io/node
 daemonsets:
   - name: kiam
-    namespace: kube-system  
+    namespace: kube-system
 ```
 JSON:
 
@@ -52,9 +42,9 @@ JSON:
   ]
 }
 ```
-This example will select any nodes in AWS ASGs named "standard" or "special" that have the label 
-`node-role.kubernetes.io/node` present, and no nodes with label `node-role.kubernetes.io/master`. If the matching nodes 
-do not have a running and ready pod from the `kiam` daemonset in the `kube-system` namespace. It will add a taint of 
+This example will select any nodes in AWS ASGs named "standard" or "special" that have the label
+`node-role.kubernetes.io/node` present, and no nodes with label `node-role.kubernetes.io/master`. If the matching nodes
+do not have a running and ready pod from the `kiam` daemonset in the `kube-system` namespace. It will add a taint of
 `nidhogg.uswitch.com/kube-system.kiam:NoSchedule` until there is a ready kiam pod on the node.
 
 If you want pods to be able to run on the nidhogg tainted nodes you can add a toleration:
@@ -68,7 +58,7 @@ spec:
 ```
 
 ## Deploying
-Docker images can be found at https://quay.io/uswitch/nidhogg
+Docker images can be found at ghcr.io/pelotech/nidhogg
 
 Example [Kustomize](https://github.com/kubernetes-sigs/kustomize) manifests can be found  [here](/config) to quickly deploy this to a cluster.
 

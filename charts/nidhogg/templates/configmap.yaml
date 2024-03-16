@@ -1,0 +1,11 @@
+{{- if .Values.configuration }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nidhogg.fullname" . }}
+  labels:
+{{ include "nidhogg.labels" . | indent 4 }}
+data:
+  config.json: |
+{{ toJson .Values.configuration | indent 4 }}
+{{- end }}

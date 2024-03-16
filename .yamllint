@@ -5,3 +5,6 @@ rules:
   commas: disable
   indentation:
     indent-sequences: whatever
+
+ignore: |
+  *templates/

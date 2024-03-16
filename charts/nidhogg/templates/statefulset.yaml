@@ -39,7 +39,7 @@ spec:
           args:
             - --config-file=/config/config.json
             - --leader-election
-            - --leader-namespace=nidhogg-system
+            - --leader-namespace={{ $.Release.Namespace }}
             - --leader-configmap=nidhogg-election
           env:
             - name: POD_NAMESPACE

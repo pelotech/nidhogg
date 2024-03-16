@@ -22,7 +22,7 @@ jobs:
       - name: Chart | Push - nidhogg
         uses: appany/helm-oci-chart-releaser@v0.4.1
         with:
-          name: hidhogg
+          name: nidhogg
           repository: pelotech/charts
           tag: 0.1.0
           registry: ghcr.io

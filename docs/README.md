@@ -1,6 +1,6 @@
 ![main](https://github.com/pelotech/nidhogg/actions/workflows/main.yaml/badge.svg)
 ![pre-commit](https://github.com/pelotech/nidhogg/actions/workflows/pre-commit.yaml/badge.svg)
-
+![publish-chart](https://github.com/pelotech/nidhogg/actions/workflows/publish-chart.yaml/badge.svg)
 
 # Nidhogg
 

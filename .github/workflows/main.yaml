@@ -6,6 +6,7 @@ on:
       - 'README.md'
       - 'gitops/**'
       - 'docs/**'
+      - 'charts/**'
 
 jobs:
   deploy:

@@ -87,3 +87,4 @@ We publish a helm chart to https://ghcr.io/pelotech/charts/nidhogg
 -metrics-addr string
     The address the metric endpoint binds to. (default ":8080")
 ```
+

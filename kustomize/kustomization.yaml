@@ -20,7 +20,7 @@ resources:
 images:
   - name: controller
     newName: ghcr.io/pelotech/nidhogg
-    newTag: v0.5.0
+    newTag: v0.5.1
 
 replacements:
   - source:

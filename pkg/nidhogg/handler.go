@@ -250,10 +250,10 @@ func (h *Handler) getDaemonsetPods(ctx context.Context, nodeName string, ds Daem
 	}
 
 	matchingPods := make([]*corev1.Pod, 0)
-	for _, pod := range pods.Items {
+	for i, pod := range pods.Items {
 		for _, owner := range pod.OwnerReferences {
 			if owner.Name == ds.Name && pod.Spec.NodeName == nodeName {
-				matchingPods = append(matchingPods, &pod)
+				matchingPods = append(matchingPods, &pods.Items[i])
 			}
 		}
 	}

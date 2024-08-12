@@ -17,13 +17,14 @@ package node
 
 import (
 	"context"
-	"github.com/onsi/gomega"
 	stdlog "log"
 	"os"
 	"path/filepath"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sync"
 	"testing"
+
+	"github.com/onsi/gomega"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/uswitch/nidhogg/pkg/apis"
 	"k8s.io/client-go/kubernetes/scheme"

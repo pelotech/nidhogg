@@ -2,12 +2,13 @@ package nidhogg
 
 import (
 	"context"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 const (
@@ -24,10 +25,10 @@ const (
 func TestCalculateTaintsWithReadyPod(t *testing.T) {
 	ctx := context.TODO()
 	node := buildNode()
-	pod := buildPod(corev1.PodReady)
+	pod := buildPod("pod", corev1.PodReady)
 	cfg := buildNidhoggConfig()
 
-	handler := buildHandler(pod, cfg)
+	handler := buildHandler([]corev1.Pod{pod}, cfg)
 	updatedNode, changes, err := handler.calculateTaints(ctx, &node)
 
 	assert.NoError(t, err)
@@ -40,10 +41,10 @@ func TestCalculateTaintsWithReadyPod(t *testing.T) {
 func TestCalculateTaintsWithUnreadyPod(t *testing.T) {
 	ctx := context.TODO()
 	node := buildNode()
-	pod := buildPod(corev1.PodScheduled)
+	pod := buildPod("pod", corev1.PodScheduled)
 	cfg := buildNidhoggConfig()
 
-	handler := buildHandler(pod, cfg)
+	handler := buildHandler([]corev1.Pod{pod}, cfg)
 	updatedNode, changes, err := handler.calculateTaints(ctx, &node)
 
 	assert.NoError(t, err)
@@ -53,12 +54,29 @@ func TestCalculateTaintsWithUnreadyPod(t *testing.T) {
 	assert.Empty(t, changes.taintsAdded, taintName)
 }
 
-func buildHandler(pod corev1.Pod, config HandlerConfig) Handler {
+func TestGetDaemonsetPodsReturnsUniquePods(t *testing.T) {
+	ctx := context.TODO()
+	pod1 := buildPod("pod1", corev1.PodReady)
+	pod2 := buildPod("pod2", corev1.PodReady)
+	cfg := buildNidhoggConfig()
+
+	handler := buildHandler([]corev1.Pod{pod1, pod2}, cfg)
+	daemonset := Daemonset{Name: daemonsetName, Namespace: namespace}
+	pods, err := handler.getDaemonsetPods(ctx, nodeName, daemonset)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, pods)
+	assert.Equal(t, len(pods), 2)
+	assert.Equal(t, pods[0].Name, pod1.Name)
+	assert.Equal(t, pods[1].Name, pod2.Name)
+}
+
+func buildHandler(pods []corev1.Pod, config HandlerConfig) Handler {
 	return Handler{
 		Client: fake.NewClientBuilder().WithLists(&corev1.PodList{
 			TypeMeta: metav1.TypeMeta{},
 			ListMeta: metav1.ListMeta{},
-			Items:    []corev1.Pod{pod},
+			Items:    pods,
 		}).Build(),
 		recorder: record.NewFakeRecorder(0),
 		config:   config,
@@ -79,10 +97,10 @@ func buildNidhoggConfig() HandlerConfig {
 	}
 }
 
-func buildPod(conditionType corev1.PodConditionType) corev1.Pod {
+func buildPod(podName string, conditionType corev1.PodConditionType) corev1.Pod {
 	return corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            "pod",
+			Name:            podName,
 			Namespace:       namespace,
 			OwnerReferences: []metav1.OwnerReference{{Name: daemonsetName}},
 		},

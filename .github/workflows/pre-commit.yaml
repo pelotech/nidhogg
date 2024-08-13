@@ -1,0 +1,25 @@
+name: pre-commit
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install pre-commit
+        run: pip install pre-commit
+
+      - name: Build dependencies Helm - nidhogg
+        uses: WyriHaximus/github-action-helm3@v4
+        with:
+          exec: helm dependency build charts/nidhogg
+
+      - name: pre-commit
+        run: pre-commit run --all-files --show-diff-on-failure

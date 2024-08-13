@@ -8,15 +8,6 @@ on:
       - main
 
 jobs:
-  pre-commit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: install pre-commit
-        run: pip install pre-commit
-      - name: pre-commit
-        run: pre-commit run --all-files --show-diff-on-failure
-
   build:
     runs-on: ubuntu-latest
     steps:

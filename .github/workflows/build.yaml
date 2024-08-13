@@ -1,0 +1,37 @@
+name: build
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install pre-commit
+        run: pip install pre-commit
+      - name: pre-commit
+        run: pre-commit run --all-files --show-diff-on-failure
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get kubebuilder
+        uses: RyanSiu1995/kubebuilder-action@v1.3.1
+        with:
+          version: 4.1.1
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21.x'
+      - name: Display Go version
+        run: go version
+      - name: Build manager library
+        run: go build -o bin/manager github.com/uswitch/nidhogg/cmd/manager
+      - name: Run tests
+        run: go test ./pkg/... ./cmd/...

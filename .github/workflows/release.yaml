@@ -43,7 +43,7 @@ jobs:
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - name: Build and push Docker image sha
         if: github.ref_type == 'branch'
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64, linux/arm64
@@ -54,7 +54,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Build and push Docker image tag
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         if: github.ref_type == 'tag'
         with:
           context: .

@@ -15,20 +15,31 @@ Nidhogg was built using [Kubebuilder](https://github.com/kubernetes-sigs/kubebui
 ## Usage
 
 Nidhogg requires a yaml/json config file to tell it what Daemonsets to watch and what nodes to act on.
-`nodeSelector` is a map of keys/values corresponding to node labels. `daemonsets` is an array of Daemonsets to watch, each containing two fields `name` and `namespace`. Nodes are tainted with taint that follows the format of `nidhogg.uswitch.com/namespace.name:NoSchedule`.
+
+| Attribute name | Required/Optional | Description |
+| :--- | :--- | :--- |
+| `nodeSelector` | Required | Map of keys/values corresponding to node labels |
+| `daemonsets` | Required | Array of Daemonsets to watch, each containing two fields `name` and `namespace` |
+| `taintNamePrefix` | Optional | Prefix of the taint name, defaults to `nidhogg.uswitch.com` if not specified |
+| `taintRemovalDelayInSeconds` | Optional | Delay to apply before removing taint on the node when ready, defaults to 0 if not specified |
+
+Nodes are tainted with a taint that follows the format of `taintNamePrefix/namespace.name:NoSchedule`
 
 Example:
 
 YAML:
 ```yaml
 nodeSelector:
-  node-role.kubernetes.io/node
+  - "node-role.kubernetes.io/node"
+  - "!node-role.kubernetes.io/master"
+  - "aws.amazon.com/ec2.asg.name in (standard, special)"
 daemonsets:
   - name: kiam
     namespace: kube-system
+taintNamePrefix: "nidhogg.uswitch.com"
+taintRemovalDelayInSeconds: 10
 ```
 JSON:
-
 ```json
 {
   "nodeSelector": [
@@ -41,13 +52,16 @@ JSON:
       "name": "kiam",
       "namespace": "kube-system"
     }
-  ]
+  ],
+  "taintNamePrefix": "nidhogg.uswitch.com",
+  "taintRemovalDelayInSeconds": 10
 }
 ```
-This example will select any nodes in AWS ASGs named "standard" or "special" that have the label
-`node-role.kubernetes.io/node` present, and no nodes with label `node-role.kubernetes.io/master`. If the matching nodes
-do not have a running and ready pod from the `kiam` daemonset in the `kube-system` namespace. It will add a taint of
-`nidhogg.uswitch.com/kube-system.kiam:NoSchedule` until there is a ready kiam pod on the node.
+This example will select any nodes in AWS ASGs named "standard" or "special" that have the label `node-role.kubernetes.io/node` present, and no nodes with label `node-role.kubernetes.io/master`
+
+If the matching nodes do not have a running and ready pod from the `kiam` daemonset in the `kube-system` namespace, it will add a taint of `nidhogg.uswitch.com/kube-system.kiam:NoSchedule` until there is a ready kiam pod on the node.
+
+Whenever the pod becomes ready, a delay of 10s will be applied before removing the taint.
 
 If you want pods to be able to run on the nidhogg tainted nodes you can add a toleration:
 

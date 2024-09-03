@@ -230,20 +230,18 @@ func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*
 				return nil, taintChanges{}, fmt.Errorf("error fetching pods: %v", err)
 			}
 
-			if len(pods) > 0 && utils.AllTrue(pods, func(pod *corev1.Pod) bool { return podReady(pod) }) {
-				// if the taint is in the taintsToRemove map, it'll be removed
-				continue
+			if len(pods) == 0 || (len(pods) > 0 && !utils.AllTrue(pods, func(pod *corev1.Pod) bool { return podReady(pod) })) {
+				// pod doesn't exist or is not ready
+				_, ok := taintsToRemove[taint]
+				if ok {
+					// we want to keep this already existing taint on it
+					delete(taintsToRemove, taint)
+				} else {
+					// taint is not already present, adding it
+					changes.taintsAdded = append(changes.taintsAdded, taint)
+					nodeCopy.Spec.Taints = addTaint(nodeCopy.Spec.Taints, taint)
+				}
 			}
-			// pod doesn't exist or is not ready
-			_, ok := taintsToRemove[taint]
-			if ok {
-				// we want to keep this already existing taint on it
-				delete(taintsToRemove, taint)
-				continue
-			}
-			// taint is not already present, adding it
-			changes.taintsAdded = append(changes.taintsAdded, taint)
-			nodeCopy.Spec.Taints = addTaint(nodeCopy.Spec.Taints, taint)
 		}
 	}
 

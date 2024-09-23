@@ -17,14 +17,15 @@ package node
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/onsi/gomega"
 	"github.com/uswitch/nidhogg/pkg/nidhogg"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"testing"
-	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,10 +48,10 @@ func TestReconcile(t *testing.T) {
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c = mgr.GetClient()
 
-	handler := nidhogg.HandlerConfig{}
-	_ = handler.BuildSelectors()
+	handlerConfig := nidhogg.HandlerConfig{}
+	_ = handlerConfig.BuildSelectors()
 
-	recFn, requests := SetupTestReconcile(newReconciler(mgr, handler))
+	recFn, requests := SetupTestReconcile(newReconciler(mgr, handlerConfig))
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
 
 	_, cancel, mgrStopped := StartTestManager(mgr, g)

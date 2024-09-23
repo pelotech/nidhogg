@@ -3,13 +3,15 @@ package nidhogg
 import (
 	"context"
 	"fmt"
-	"github.com/uswitch/nidhogg/pkg/utils"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"reflect"
 	"strings"
 	"time"
 
+	"github.com/uswitch/nidhogg/pkg/utils"
+	"k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/prometheus/client_golang/prometheus"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -66,19 +68,24 @@ type HandlerConfig struct {
 	TaintNamePrefix            string      `json:"taintNamePrefix,omitempty" yaml:"taintNamePrefix,omitempty"`
 	TaintRemovalDelayInSeconds int         `json:"taintRemovalDelayInSeconds,omitempty" yaml:"taintRemovalDelayInSeconds,omitempty"`
 	Daemonsets                 []Daemonset `json:"daemonsets" yaml:"daemonsets"`
-	NodeSelector               []string    `json:"nodeSelector" yaml:"nodeSelector"`
-	Selector                   labels.Selector
+	NodeSelector               []string    `json:"nodeSelector,omitempty" yaml:"nodeSelector,omitempty"`
+	DaemonsetSelectors         map[Daemonset]labels.Selector
 }
 
 func (hc *HandlerConfig) BuildSelectors() error {
-	hc.Selector = labels.Everything()
+	hc.DaemonsetSelectors = make(map[Daemonset]labels.Selector)
+	globalSelector := labels.Nothing()
 	for _, rawSelector := range hc.NodeSelector {
 		if selector, err := labels.Parse(rawSelector); err != nil {
 			return fmt.Errorf("error parsing selector: %v", err)
 		} else {
 			requirements, _ := selector.Requirements()
-			hc.Selector = hc.Selector.Add(requirements...)
+			globalSelector = labels.NewSelector().Add(requirements...)
 		}
+	}
+	//Will initialize all daemonsets with the same selector, either representing the NodeSelector config or labels.Nothing if no config was provided for NodeSelector
+	for _, daemonset := range hc.Daemonsets {
+		hc.DaemonsetSelectors[daemonset] = globalSelector
 	}
 	return nil
 }
@@ -116,15 +123,10 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
-	//check whether nodeName matches the nodeSelector
-	if !h.config.Selector.Matches(labels.Set(latestNode.Labels)) {
-		return reconcile.Result{}, nil
-	}
-
 	updatedNode, taintChanges, err := h.calculateTaints(ctx, latestNode)
 	if err != nil {
 		taintOperationErrors.WithLabelValues("calculateTaints").Inc()
-		return reconcile.Result{}, fmt.Errorf("error caluclating taints for nodeName: %v", err)
+		return reconcile.Result{}, fmt.Errorf("error calculating taints for nodeName: %v", err)
 	}
 
 	taintLess := true
@@ -179,6 +181,18 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 	return reconcile.Result{}, nil
 }
 
+func (h *Handler) getSelectorFromDaemonSet(ctx context.Context, daemonset Daemonset) (labels.Selector, error) {
+	ds := &appsv1.DaemonSet{}
+	err := h.Get(ctx, types.NamespacedName{Namespace: daemonset.Namespace, Name: daemonset.Name}, ds)
+	if err != nil {
+		logf.Log.Info(fmt.Sprintf("Could not fetch daemonset %s from namespace %s", daemonset.Name, daemonset.Namespace))
+		return nil, err
+	}
+	selector := labels.SelectorFromSet(ds.Spec.Template.Spec.NodeSelector)
+
+	return selector, nil
+}
+
 func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*corev1.Node, taintChanges, error) {
 
 	nodeCopy := instance.DeepCopy()
@@ -195,28 +209,42 @@ func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*
 	}
 	for _, daemonset := range h.config.Daemonsets {
 
-		taint := fmt.Sprintf("%s/%s.%s", h.getTaintNamePrefix(), daemonset.Namespace, daemonset.Name)
-		// Get Pod for nodeName
-		pods, err := h.getDaemonsetPods(ctx, instance.Name, daemonset)
-		if err != nil {
-			return nil, taintChanges{}, fmt.Errorf("error fetching pods: %v", err)
+		//If NodeSelector was not provided upfront through config
+		if h.config.NodeSelector == nil {
+			//Will try to get selectors from daemonset directly
+			selector, err := h.getSelectorFromDaemonSet(ctx, daemonset)
+			if err != nil {
+				logf.Log.Info(fmt.Sprintf("Could not fetch selector from daemonset %s in namespace %s", daemonset.Name, daemonset.Namespace))
+			} else {
+				//Override existing daemonset selector with the one freshly retrieved from the daemonset
+				h.config.DaemonsetSelectors[daemonset] = selector
+			}
 		}
 
-		if len(pods) > 0 && utils.AllTrue(pods, func(pod *corev1.Pod) bool { return podReady(pod) }) {
-			// if the taint is in the taintsToRemove map, it'll be removed
-			continue
+		//make sure daemonset selector matches node selector
+		if h.config.DaemonsetSelectors[daemonset].Matches(labels.Set(instance.Labels)) {
+			taint := fmt.Sprintf("%s/%s.%s", h.getTaintNamePrefix(), daemonset.Namespace, daemonset.Name)
+			// Get Pod for nodeName
+			pods, err := h.getDaemonsetPods(ctx, instance.Name, daemonset)
+			if err != nil {
+				return nil, taintChanges{}, fmt.Errorf("error fetching pods: %v", err)
+			}
+
+			if len(pods) == 0 || (len(pods) > 0 && !utils.AllTrue(pods, func(pod *corev1.Pod) bool { return podReady(pod) })) {
+				// pod doesn't exist or is not ready
+				_, ok := taintsToRemove[taint]
+				if ok {
+					// we want to keep this already existing taint on it
+					delete(taintsToRemove, taint)
+				} else {
+					// taint is not already present, adding it
+					changes.taintsAdded = append(changes.taintsAdded, taint)
+					nodeCopy.Spec.Taints = addTaint(nodeCopy.Spec.Taints, taint)
+				}
+			}
 		}
-		// pod doesn't exist or is not ready
-		_, ok := taintsToRemove[taint]
-		if ok {
-			// we want to keep this already existing taint on it
-			delete(taintsToRemove, taint)
-			continue
-		}
-		// taint is not already present, adding it
-		changes.taintsAdded = append(changes.taintsAdded, taint)
-		nodeCopy.Spec.Taints = addTaint(nodeCopy.Spec.Taints, taint)
 	}
+
 	for taint := range taintsToRemove {
 		h.applyTaintRemovalDelay()
 		nodeCopy.Spec.Taints = removeTaint(nodeCopy.Spec.Taints, taint)

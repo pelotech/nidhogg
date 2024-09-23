@@ -18,8 +18,8 @@ Nidhogg requires a yaml/json config file to tell it what Daemonsets to watch and
 
 | Attribute name | Required/Optional | Description |
 | :--- | :--- | :--- |
-| `nodeSelector` | Required | Map of keys/values corresponding to node labels |
 | `daemonsets` | Required | Array of Daemonsets to watch, each containing two fields `name` and `namespace` |
+| `nodeSelector` | Optional | Map of keys/values corresponding to node labels, will default to get selectors from daemonsets directly if not provided |
 | `taintNamePrefix` | Optional | Prefix of the taint name, defaults to `nidhogg.uswitch.com` if not specified |
 | `taintRemovalDelayInSeconds` | Optional | Delay to apply before removing taint on the node when ready, defaults to 0 if not specified |
 
@@ -29,29 +29,29 @@ Example:
 
 YAML:
 ```yaml
+daemonsets:
+  - name: kiam
+    namespace: kube-system
 nodeSelector:
   - "node-role.kubernetes.io/node"
   - "!node-role.kubernetes.io/master"
   - "aws.amazon.com/ec2.asg.name in (standard, special)"
-daemonsets:
-  - name: kiam
-    namespace: kube-system
 taintNamePrefix: "nidhogg.uswitch.com"
 taintRemovalDelayInSeconds: 10
 ```
 JSON:
 ```json
 {
-  "nodeSelector": [
-    "node-role.kubernetes.io/node",
-    "!node-role.kubernetes.io/master",
-    "aws.amazon.com/ec2.asg.name in (standard, special)"
-  ],
   "daemonsets": [
     {
       "name": "kiam",
       "namespace": "kube-system"
     }
+  ],
+  "nodeSelector": [
+    "node-role.kubernetes.io/node",
+    "!node-role.kubernetes.io/master",
+    "aws.amazon.com/ec2.asg.name in (standard, special)"
   ],
   "taintNamePrefix": "nidhogg.uswitch.com",
   "taintRemovalDelayInSeconds": 10

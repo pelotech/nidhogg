@@ -18,6 +18,8 @@ package main
 import (
 	"flag"
 	"os"
+	"strings"
+
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/uswitch/nidhogg/pkg/apis"
@@ -57,7 +59,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("looking for nodes that match selector", "selector", handlerConf.Selector.String())
+	if handlerConf.NodeSelector == nil {
+		log.Info("looking for nodes that will match daemonsets selectors")
+	} else {
+		log.Info("looking for nodes that match provided node selector", "selector", strings.Join(handlerConf.NodeSelector, ","))
+	}
 
 	// Get a config to talk to the apiserver
 	log.Info("setting up client for manager")

@@ -9,19 +9,6 @@ resources:
   - ./rbac.yaml
   - ./leader-election-rbac.yaml
 
-#patches:
-# Expose the prometheus metrics on default port
-#  - target:
-#      group: apps
-#      version: v1
-#      kind: StatefulSet
-#    path: ./overlays/nidhogg-statefulset-prometheus-patch.yaml
-
-images:
-  - name: controller
-    newName: ghcr.io/pelotech/nidhogg
-    newTag: v0.5.1
-
 replacements:
   - source:
       version: v1

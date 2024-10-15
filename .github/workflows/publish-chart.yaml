@@ -1,11 +1,8 @@
 name: publish-charts
 on:
   push:
-    branches:
-      - main
-    paths:
-      - charts/**
-      - '!**/*.md'
+    branches: [ main ]
+    tags: [ 'v*' ]
   workflow_dispatch:
 jobs:
   publish-charts:
@@ -24,7 +21,8 @@ jobs:
         with:
           name: nidhogg
           repository: pelotech/charts
-          tag: 0.1.0
+          tag: ${{ github.ref_name }}
+          app_version: ${{ github.ref_name }}
           registry: ghcr.io
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.github_token }}

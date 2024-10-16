@@ -24,7 +24,7 @@ jobs:
         with:
           name: nidhogg
           repository: pelotech/charts
-          tag: 0.1.0
+          tag: v0.5.3
           registry: ghcr.io
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.github_token }}

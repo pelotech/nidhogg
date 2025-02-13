@@ -5,8 +5,12 @@
   "tag-separator": "/",
   "release-type": "simple",
   "extra-files": [
+    {
+      "type": "yaml",
+      "path": "charts/nidhogg/Chart.yaml",
+      "jsonpath": "$.version"
+    },
     "kustomize/resources.yaml",
-    "charts/nidhogg/Chart.yaml",
     "charts/nidhogg/README.md"
   ],
   "packages": {

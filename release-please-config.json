@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "include-component-in-tag": false,
+  "include-v-in-tag": true,
+  "tag-separator": "/",
+  "release-type": "simple",
+  "extra-files": [
+    "kustomize/resources.yaml",
+    "charts/nidhogg/Chart.yaml",
+    "charts/nidhogg/README.md"
+  ],
+  "packages": {
+    ".": {}
+    }
+  }

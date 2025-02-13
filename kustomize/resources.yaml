@@ -45,7 +45,7 @@ spec:
       containers:
       - command:
         - /manager
-        image: ghcr.io/pelotech/nidhogg:v0.5.1
+        image: ghcr.io/pelotech/nidhogg:v0.5.3 # x-release-please-version
         imagePullPolicy: IfNotPresent
         name: manager
         args:

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.3](https://github.com/pelotech/nidhogg/compare/v0.6.2...v0.6.3) (2025-02-14)
+
+
+### Bug Fixes
+
+* update template for release please to also update appVersion in the template ([cc23dbd](https://github.com/pelotech/nidhogg/commit/cc23dbd5ea5ad2f8f38626699c4d36038b420d6b))
+
 ## [0.6.2](https://github.com/pelotech/nidhogg/compare/v0.6.1...v0.6.2) (2025-02-14)
 
 

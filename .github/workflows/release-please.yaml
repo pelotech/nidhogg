@@ -48,7 +48,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=semver,pattern={{version}},value=${{ fromJSON(needs.release-please.outputs.tag_name) }}
+            type=raw,pattern={{version}},value=${{ needs.release-please.outputs.tag_name }}
       - name: Build and push Docker image tag
         uses: docker/build-push-action@v6
         with:
@@ -57,7 +57,7 @@ jobs:
           file: Dockerfile
           push: true
           build-args: |
-            BUILD_VERSION=${{ fromJSON(needs.release-please.outputs.tag_name) }}
+            BUILD_VERSION="${{ needs.release-please.outputs.tag_name }}"
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Build dependencies Helm - nidhogg
@@ -69,7 +69,7 @@ jobs:
         with:
           name: nidhogg
           repository: pelotech/charts
-          tag: ${{ fromJSON(needs.release-please.outputs.release_version) }}
+          tag: ${{ needs.release-please.outputs.release_version }}
           registry: ghcr.io
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.github_token }}

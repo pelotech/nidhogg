@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/pelotech/nidhogg/compare/v0.6.1...v0.6.2) (2025-02-14)
+
+
+### Bug Fixes
+
+* update chart values to update app and chart version in sync ([2204fda](https://github.com/pelotech/nidhogg/commit/2204fda99ea41abb3ff5748c9e5d774738dae7a4))
+
 ## [0.6.1](https://github.com/pelotech/nidhogg/compare/v0.6.0...v0.6.1) (2025-02-14)
 
 

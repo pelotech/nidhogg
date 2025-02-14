@@ -6,9 +6,8 @@
   "release-type": "simple",
   "extra-files": [
     {
-      "type": "yaml",
-      "path": "charts/nidhogg/Chart.yaml",
-      "jsonpath": "$.version"
+      "type": "generic",
+      "path": "charts/nidhogg/Chart.yaml"
     },
     "kustomize/resources.yaml",
     "charts/nidhogg/README.md"

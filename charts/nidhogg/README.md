@@ -1,6 +1,6 @@
 # nidhogg
 
-### version: 0.6.0<!-- x-release-please-version -->
+### version: 0.6.1<!-- x-release-please-version -->
 
 ![AppVersion: v0.5.0](https://img.shields.io/badge/AppVersion-v0.5.0-informational?style=flat-square)
 

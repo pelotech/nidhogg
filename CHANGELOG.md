@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/pelotech/nidhogg/compare/v0.6.0...v0.6.1) (2025-02-14)
+
+
+### Bug Fixes
+
+* update to remove fromJson from job outputs ([b262da8](https://github.com/pelotech/nidhogg/commit/b262da8b4a061ade45cc476771ee7c074cee6a91))
+
 ## [0.6.0](https://github.com/pelotech/nidhogg/compare/v0.5.3...v0.6.0) (2025-02-13)
 
 

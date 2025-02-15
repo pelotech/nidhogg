@@ -17,6 +17,7 @@ package node
 
 import (
 	"context"
+
 	"github.com/uswitch/nidhogg/pkg/nidhogg"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,24 +45,24 @@ func newReconciler(mgr manager.Manager, cfg nidhogg.HandlerConfig) reconcile.Rec
 	return &ReconcileNode{reconcilerHandler, mgr.GetScheme()}
 }
 
-var _ handler.EventHandler = &nodeEnqueue{}
+var _ handler.TypedEventHandler[*corev1.Node, reconcile.Request] = &nodeEnqueue{}
 
 type nodeEnqueue struct{}
 
 // Update implements the interface
-func (e *nodeEnqueue) Update(_ context.Context, _ event.UpdateEvent, _ workqueue.RateLimitingInterface) {
+func (e *nodeEnqueue) Update(_ context.Context, _ event.TypedUpdateEvent[*corev1.Node], _ workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 }
 
 // Delete implements the interface
-func (e *nodeEnqueue) Delete(_ context.Context, _ event.DeleteEvent, _ workqueue.RateLimitingInterface) {
+func (e *nodeEnqueue) Delete(_ context.Context, _ event.TypedDeleteEvent[*corev1.Node], _ workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 }
 
 // Generic implements the interface
-func (e *nodeEnqueue) Generic(_ context.Context, _ event.GenericEvent, _ workqueue.RateLimitingInterface) {
+func (e *nodeEnqueue) Generic(_ context.Context, _ event.TypedGenericEvent[*corev1.Node], _ workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 }
 
 // Create adds the node to the queue, the node is created as NotReady and without daemonset pods
-func (e *nodeEnqueue) Create(_ context.Context, evt event.CreateEvent, q workqueue.RateLimitingInterface) {
+func (e *nodeEnqueue) Create(_ context.Context, evt event.TypedCreateEvent[*corev1.Node], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 	if evt.Object == nil {
 		return
 	}
@@ -70,12 +71,12 @@ func (e *nodeEnqueue) Create(_ context.Context, evt event.CreateEvent, q workque
 	}})
 }
 
-var _ handler.EventHandler = &podEnqueue{}
+var _ handler.TypedEventHandler[*corev1.Pod, reconcile.Request] = &podEnqueue{}
 
 type podEnqueue struct{}
 
 // Generic implements the interface
-func (e *podEnqueue) Generic(_ context.Context, _ event.GenericEvent, _ workqueue.RateLimitingInterface) {
+func (e *podEnqueue) Generic(_ context.Context, _ event.TypedGenericEvent[*corev1.Pod], _ workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 }
 
 // canAddToQueue check if the Pod is associated to a node and is a daemonset pod
@@ -91,11 +92,11 @@ func (e *podEnqueue) canAddToQueue(pod *corev1.Pod) bool {
 }
 
 // Create adds the node of the daemonset pod to the queue
-func (e *podEnqueue) Create(_ context.Context, evt event.CreateEvent, q workqueue.RateLimitingInterface) {
-	pod, ok := evt.Object.(*corev1.Pod)
-	if !ok {
+func (e *podEnqueue) Create(_ context.Context, evt event.TypedCreateEvent[*corev1.Pod], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+	if evt.Object == nil {
 		return
 	}
+	pod := evt.Object
 	if !e.canAddToQueue(pod) {
 		return
 	}
@@ -106,11 +107,11 @@ func (e *podEnqueue) Create(_ context.Context, evt event.CreateEvent, q workqueu
 }
 
 // Update adds the node of the updated daemonset pod to the queue
-func (e *podEnqueue) Update(_ context.Context, evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
-	pod, ok := evt.ObjectNew.(*corev1.Pod)
-	if !ok {
+func (e *podEnqueue) Update(_ context.Context, evt event.TypedUpdateEvent[*corev1.Pod], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+	if evt.ObjectNew == nil {
 		return
 	}
+	pod := evt.ObjectNew
 	if !e.canAddToQueue(pod) {
 		return
 	}
@@ -120,11 +121,11 @@ func (e *podEnqueue) Update(_ context.Context, evt event.UpdateEvent, q workqueu
 }
 
 // Delete adds the node of the deleted daemonset pod to the queue
-func (e *podEnqueue) Delete(_ context.Context, evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
-	pod, ok := evt.Object.(*corev1.Pod)
-	if !ok {
+func (e *podEnqueue) Delete(_ context.Context, evt event.TypedDeleteEvent[*corev1.Pod], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+	if evt.Object == nil {
 		return
 	}
+	pod := evt.Object
 	if !e.canAddToQueue(pod) {
 		return
 	}
@@ -145,12 +146,12 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to Node
-	err = c.Watch(source.Kind(mgr.GetCache(), &corev1.Node{}), &nodeEnqueue{})
+	err = c.Watch(source.Kind(mgr.GetCache(), &corev1.Node{}, &nodeEnqueue{}))
 	if err != nil {
 		return err
 	}
 
-	err = c.Watch(source.Kind(mgr.GetCache(), &corev1.Pod{}), &podEnqueue{})
+	err = c.Watch(source.Kind(mgr.GetCache(), &corev1.Pod{}, &podEnqueue{}))
 	if err != nil {
 		return err
 	}

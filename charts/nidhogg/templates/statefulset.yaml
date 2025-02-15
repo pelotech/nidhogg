@@ -4,6 +4,9 @@ metadata:
   name: {{ include "nidhogg.fullname" . }}
   labels:
     {{- include "nidhogg.labels" . | nindent 4 }}
+    {{- with .Values.extraLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.6.4](https://github.com/pelotech/nidhogg/compare/v0.6.3...v0.6.4) (2025-02-15)
+
+
+### Bug Fixes
+
+* **deps:** update kubernetes packages to v0.32.2 ([#7](https://github.com/pelotech/nidhogg/issues/7)) ([b603fb7](https://github.com/pelotech/nidhogg/commit/b603fb73d4bc939e463894b585fa08d3faa6eef6))
+* **deps:** update module github.com/prometheus/client_golang to v1.20.5 ([#9](https://github.com/pelotech/nidhogg/issues/9)) ([4e414c0](https://github.com/pelotech/nidhogg/commit/4e414c0ccfed7e67a5127bc4c60c00ab36052ea7))
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.20.2 ([#51](https://github.com/pelotech/nidhogg/issues/51)) ([e57c21d](https://github.com/pelotech/nidhogg/commit/e57c21d963816f6baa4b07cc07d955e902258e20))
+* upgrade controller runtime to v0.20.1 and conforming to new TypedEventHandler interface ([#46](https://github.com/pelotech/nidhogg/issues/46)) ([9d3f9c1](https://github.com/pelotech/nidhogg/commit/9d3f9c1b787f5f7a11fda6b6b3b64d514d394300))
+
 ## [0.6.3](https://github.com/pelotech/nidhogg/compare/v0.6.2...v0.6.3) (2025-02-14)
 
 

@@ -83,12 +83,12 @@ func (e *podEnqueue) Generic(_ context.Context, _ event.TypedGenericEvent[*corev
 // canAddToQueue check if the Pod is associated to a node and is a daemonset pod
 func (e *podEnqueue) canAddToQueue(pod *corev1.Pod) bool {
 	if pod.Spec.NodeName == "" {
-		logf.Log.Info("cannot add pod to queue", "pod", pod.Name)
+		logf.Log.Info("cannot add pod to queue; node name is empty", "pod", pod.Name)
 		return false
 	}
 	owner := v1.GetControllerOf(pod)
 	if owner == nil {
-		logf.Log.Info("cannot add pod to queue", "pod", pod.Name)
+		logf.Log.Info("cannot add pod to queue; owner is nil", "pod", pod.Name)
 		return false
 	}
 	return owner.Kind == "DaemonSet"

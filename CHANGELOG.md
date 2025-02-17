@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.5](https://github.com/pelotech/nidhogg/compare/v0.6.4...v0.6.5) (2025-02-17)
+
+
+### Bug Fixes
+
+* add logs to help detect re-added taints ([#56](https://github.com/pelotech/nidhogg/issues/56)) ([dac2d16](https://github.com/pelotech/nidhogg/commit/dac2d16c989630d62d247463d5c43cf5c12115d8))
+
 ## [0.6.4](https://github.com/pelotech/nidhogg/compare/v0.6.3...v0.6.4) (2025-02-15)
 
 

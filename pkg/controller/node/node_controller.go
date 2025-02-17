@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -82,10 +83,12 @@ func (e *podEnqueue) Generic(_ context.Context, _ event.TypedGenericEvent[*corev
 // canAddToQueue check if the Pod is associated to a node and is a daemonset pod
 func (e *podEnqueue) canAddToQueue(pod *corev1.Pod) bool {
 	if pod.Spec.NodeName == "" {
+		logf.Log.Info("cannot add pod to queue; node name is empty", "pod", pod.Name)
 		return false
 	}
 	owner := v1.GetControllerOf(pod)
 	if owner == nil {
+		logf.Log.Info("cannot add pod to queue; owner is nil", "pod", pod.Name)
 		return false
 	}
 	return owner.Kind == "DaemonSet"

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.6](https://github.com/pelotech/nidhogg/compare/v0.6.5...v0.6.6) (2025-02-19)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/prometheus/client_golang to v1.21.0 ([#58](https://github.com/pelotech/nidhogg/issues/58)) ([51d7a7b](https://github.com/pelotech/nidhogg/commit/51d7a7b01d59db2376177c21d52815b5aa2a8d5b))
+
 ## [0.6.5](https://github.com/pelotech/nidhogg/compare/v0.6.4...v0.6.5) (2025-02-17)
 
 

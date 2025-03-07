@@ -1,8 +1,8 @@
 # nidhogg
 
-### version: 0.6.5<!-- x-release-please-version -->
+### version: 0.6.6<!-- x-release-please-version -->
 
-### appVersion: v0.6.5 <!-- x-release-please-version -->
+### appVersion: v0.6.6 <!-- x-release-please-version -->
 
 A Helm chart for Kubernetes
 

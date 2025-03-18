@@ -110,8 +110,6 @@ func NewHandler(c client.Client, r record.EventRecorder, conf HandlerConfig) *Ha
 func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := logf.Log.WithName("nidhogg")
 
-	log.Info("begining handling of node", "node", request.NamespacedName)
-
 	// Fetch the Node instance
 	latestNode := &corev1.Node{}
 	err := h.Get(ctx, request.NamespacedName, latestNode)
@@ -297,7 +295,6 @@ func podReady(pod *corev1.Pod) bool {
 			return condition.Status == corev1.ConditionTrue
 		}
 	}
-	logf.Log.Info("pod is not ready", "pod", pod.Name, "condition", pod.Status.Conditions)
 	return false
 }
 

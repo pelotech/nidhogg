@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.6](https://github.com/pelotech/nidhogg/compare/v0.6.5...v0.6.6) (2025-03-18)
+
+
+### Bug Fixes
+
+* **deps:** update kubernetes packages to v0.32.3 ([#63](https://github.com/pelotech/nidhogg/issues/63)) ([134bbbc](https://github.com/pelotech/nidhogg/commit/134bbbc9acf2dd5d4c7cf021ae4626a3cf916093))
+* **deps:** update module github.com/prometheus/client_golang to v1.21.0 ([#58](https://github.com/pelotech/nidhogg/issues/58)) ([51d7a7b](https://github.com/pelotech/nidhogg/commit/51d7a7b01d59db2376177c21d52815b5aa2a8d5b))
+* **deps:** update module github.com/prometheus/client_golang to v1.21.1 ([#60](https://github.com/pelotech/nidhogg/issues/60)) ([6c2a3ff](https://github.com/pelotech/nidhogg/commit/6c2a3ffa2cc12fcdbc8b9f7df22c53f0939b17c7))
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.20.3 ([#62](https://github.com/pelotech/nidhogg/issues/62)) ([35e6bd6](https://github.com/pelotech/nidhogg/commit/35e6bd62c4df8f0d67a88f487666dba852cdf7c6))
+
+
+### Reverts
+
+* verbose logging ([#64](https://github.com/pelotech/nidhogg/issues/64)) ([67bd868](https://github.com/pelotech/nidhogg/commit/67bd8688d12cb7223f461d324906fa19781fdfa5))
+
 ## [0.6.5](https://github.com/pelotech/nidhogg/compare/v0.6.4...v0.6.5) (2025-02-17)
 
 

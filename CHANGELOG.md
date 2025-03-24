@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.7](https://github.com/pelotech/nidhogg/compare/v0.6.6...v0.6.7) (2025-03-24)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/onsi/gomega to v1.36.3 ([#65](https://github.com/pelotech/nidhogg/issues/65)) ([4d593fd](https://github.com/pelotech/nidhogg/commit/4d593fd4d0c4e2a0e529fa56092abd6847d9d251))
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.20.4 ([#67](https://github.com/pelotech/nidhogg/issues/67)) ([8eda4fe](https://github.com/pelotech/nidhogg/commit/8eda4febe58e6858b9cfadca7d3d76f795aff4ab))
+
 ## [0.6.6](https://github.com/pelotech/nidhogg/compare/v0.6.5...v0.6.6) (2025-03-18)
 
 

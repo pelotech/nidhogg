@@ -44,6 +44,9 @@ spec:
             - --leader-election
             - --leader-namespace={{ $.Release.Namespace }}
             - --leader-configmap=nidhogg-election
+          {{- range $key, $value := .Values.extraArgs }}
+            - --{{ $key }}={{ $value }}
+          {{- end }}
           env:
             - name: POD_NAMESPACE
               valueFrom:

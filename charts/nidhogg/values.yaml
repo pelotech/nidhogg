@@ -41,7 +41,7 @@ podAnnotations: {}
 podLabels: {}
 
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext: {}
   # capabilities:
@@ -49,7 +49,7 @@ securityContext: {}
   #   - ALL
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
-  # runAsUser: 1000
+# runAsUser: 1000
 
 service:
   type: ClusterIP
@@ -64,7 +64,7 @@ resources: {}
   #   memory: 200Mi
   # requests:
   #   cpu: 100m
-  #   memory: 200Mi
+#   memory: 200Mi
 
 # Additional volumes on the output Deployment definition.
 volumes: []
@@ -84,3 +84,8 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+extraArgs: {}
+#  kube-api-qps: 20
+#  kube-api-burst: 30
+#  disable-compression: true

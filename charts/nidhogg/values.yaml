@@ -84,3 +84,8 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+extraArgs: {}
+#  kube-api-qps: 20
+#  kube-api-burst: 30
+#  disable-compression: true

@@ -12,7 +12,7 @@ A Helm chart for Kubernetes
 |-----|------|---------|-------------|
 | affinity | object | `{}` |  |
 | configuration | object | `{"taintRemovalDelayInSeconds":5}` | Configuration for nidhogg |
-|extraArgs | object | `{}` |  |
+| extraArgs | object | `{}` |  |
 | extraLabels | object | `{}` |  |
 | fullnameOverride | string | `""` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |

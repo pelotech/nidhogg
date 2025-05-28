@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.7.0](https://github.com/pelotech/nidhogg/compare/v0.6.6...v0.7.0) (2025-05-28)
+
+
+### Features
+
+* adding ratelimiting parameters ([#74](https://github.com/pelotech/nidhogg/issues/74)) ([c7373e7](https://github.com/pelotech/nidhogg/commit/c7373e723f37531057f45a67d521d28871f2435a))
+
+
+### Bug Fixes
+
+* **deps:** update kubernetes packages to v0.33.0 ([#72](https://github.com/pelotech/nidhogg/issues/72)) ([10ac8e3](https://github.com/pelotech/nidhogg/commit/10ac8e38a272ef74c181217a14780650cd1e73fc))
+* **deps:** update kubernetes packages to v0.33.1 ([#76](https://github.com/pelotech/nidhogg/issues/76)) ([3ffaf23](https://github.com/pelotech/nidhogg/commit/3ffaf23801e96d6c94c910cd562a19997f2f1082))
+* **deps:** update module github.com/onsi/gomega to v1.36.3 ([#65](https://github.com/pelotech/nidhogg/issues/65)) ([4d593fd](https://github.com/pelotech/nidhogg/commit/4d593fd4d0c4e2a0e529fa56092abd6847d9d251))
+* **deps:** update module github.com/onsi/gomega to v1.37.0 ([#69](https://github.com/pelotech/nidhogg/issues/69)) ([570f695](https://github.com/pelotech/nidhogg/commit/570f6952e4dc1e7dc82e35dac094de75d4f331d8))
+* **deps:** update module github.com/prometheus/client_golang to v1.22.0 ([#70](https://github.com/pelotech/nidhogg/issues/70)) ([b661379](https://github.com/pelotech/nidhogg/commit/b661379e6177a1f6d855ea891907a46aa39b2101))
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.20.4 ([#67](https://github.com/pelotech/nidhogg/issues/67)) ([8eda4fe](https://github.com/pelotech/nidhogg/commit/8eda4febe58e6858b9cfadca7d3d76f795aff4ab))
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.21.0 ([#77](https://github.com/pelotech/nidhogg/issues/77)) ([0e5c680](https://github.com/pelotech/nidhogg/commit/0e5c680e1d093df6251be7c7752c15f0f5f1e9eb))
+
 ## [0.6.6](https://github.com/pelotech/nidhogg/compare/v0.6.5...v0.6.6) (2025-03-18)
 
 

@@ -100,5 +100,11 @@ We publish a helm chart to https://ghcr.io/pelotech/charts/nidhogg
     The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.
 -metrics-addr string
     The address the metric endpoint binds to. (default ":8080")
+-kube-api-qps float
+    QPS rate for throttling requests sent to the Kubernetes API server (default 20)
+-kube-api-burst int
+    Maximum burst for throttling requests sent to the Kubernetes API server (default 30)
+-disable-compression bool
+    Disable response compression for k8s restAPI in client-go (default true)
 ```
 

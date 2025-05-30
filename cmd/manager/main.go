@@ -22,6 +22,8 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	edsv1alpha1 "github.com/DataDog/extendeddaemonset/api/v1alpha1"
+
 	"github.com/uswitch/nidhogg/pkg/apis"
 	"github.com/uswitch/nidhogg/pkg/controller"
 	"github.com/uswitch/nidhogg/pkg/nidhogg"
@@ -101,6 +103,11 @@ func main() {
 	log.Info("setting up scheme")
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "unable add APIs to scheme")
+		os.Exit(1)
+	}
+
+	if err := edsv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "unable add Datadog APIs to scheme")
 		os.Exit(1)
 	}
 

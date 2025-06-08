@@ -18,7 +18,7 @@ Nidhogg requires a yaml/json config file to tell it what Daemonsets to watch and
 
 | Attribute name | Required/Optional | Description |
 | :--- | :--- | :--- |
-| `daemonsets` | Required | Array of Daemonsets to watch, each containing two fields `name` and `namespace` |
+| `daemonsets` | Required | Array of Daemonsets to watch, each containing two required fields `name` and `namespace` and optional `apiVersion` set to `datadoghq.com/v1alpha1` to manage [DataDog](https://github.com/DataDog/extendeddaemonset/)|
 | `nodeSelector` | Optional | Map of keys/values corresponding to node labels, will default to get selectors from daemonsets directly if not provided |
 | `taintNamePrefix` | Optional | Prefix of the taint name, defaults to `nidhogg.uswitch.com` if not specified |
 | `taintRemovalDelayInSeconds` | Optional | Delay to apply before removing taint on the node when ready, defaults to 0 if not specified |
@@ -32,6 +32,9 @@ YAML:
 daemonsets:
   - name: kiam
     namespace: kube-system
+  - name: datadog-agent
+    namespace: datadog-operator-system
+    apiVersion: datadoghq.com/v1alpha1
 nodeSelector:
   - "node-role.kubernetes.io/node"
   - "!node-role.kubernetes.io/master"
@@ -46,6 +49,11 @@ JSON:
     {
       "name": "kiam",
       "namespace": "kube-system"
+    },
+    {
+      "name": "datadog-agent",
+      "namespace": "datadog-operator-system",
+      "apiVersion": "datadoghq.com/v1alpha1"
     }
   ],
   "nodeSelector": [

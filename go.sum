@@ -1,3 +1,5 @@
+github.com/DataDog/extendeddaemonset/api v0.0.0-20250324131025-c3f7ab68e2ea h1:PPKUlEe+aBx+MBKg/8jwi0xcn4N8syYG8h6HFovhL9Q=
+github.com/DataDog/extendeddaemonset/api v0.0.0-20250324131025-c3f7ab68e2ea/go.mod h1:CLkfm3awFwTY5aBDm8esFwiocXIoNxY28eK6zZ5u9t0=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/blang/semver/v4 v4.0.0 h1:1PFHFE6yCCTv8C1TeyNNarDzntLi7wMI5i/pzqYIsAM=

@@ -37,11 +37,14 @@ import (
 )
 
 var (
-	metricsAddr     string
-	configPath      string
-	leaderElection  bool
-	leaderConfigMap string
-	leaderNamespace string
+	metricsAddr        string
+	configPath         string
+	leaderElection     bool
+	leaderConfigMap    string
+	leaderNamespace    string
+	clientRequestQPS   float64
+	clientRequestBurst int
+	disableCompression bool
 )
 
 func main() {
@@ -51,6 +54,9 @@ func main() {
 	flag.BoolVar(&leaderElection, "leader-election", false, "enable leader election")
 	flag.StringVar(&leaderConfigMap, "leader-configmap", "", "Name of configmap to use for leader election")
 	flag.StringVar(&leaderNamespace, "leader-namespace", "", "Namespace where leader configmap located")
+	flag.Float64Var(&clientRequestQPS, "kube-api-qps", 20.0, "QPS rate for throttling requests sent to the Kubernetes API server")
+	flag.IntVar(&clientRequestBurst, "kube-api-burst", 30, "Maximum burst for throttling requests sent to the Kubernetes API server")
+	flag.BoolVar(&disableCompression, "disable-compression", true, "Disable response compression for k8s restAPI in client-go")
 	flag.Parse()
 	logf.SetLogger(zap.New())
 	log := logf.Log.WithName("entrypoint")
@@ -70,6 +76,9 @@ func main() {
 	// Get a config to talk to the apiserver
 	log.Info("setting up client for manager")
 	cfg, err := config.GetConfig()
+	cfg.QPS = float32(clientRequestQPS)
+	cfg.Burst = clientRequestBurst
+	cfg.DisableCompression = disableCompression
 	if err != nil {
 		log.Error(err, "unable to set up client config")
 		os.Exit(1)

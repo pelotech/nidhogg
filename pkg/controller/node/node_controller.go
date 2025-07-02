@@ -88,7 +88,9 @@ func (e *podEnqueue) canAddToQueue(pod *corev1.Pod) bool {
 	if owner == nil {
 		return false
 	}
-	return owner.Kind == "DaemonSet"
+
+	allowedOwners := map[string]bool{"Daemonset":true, "ExtendedDaemonSetReplicaSet":true}
+	return allowedOwners[owner.Kind]
 }
 
 // Create adds the node of the daemonset pod to the queue

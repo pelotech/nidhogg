@@ -40,6 +40,14 @@ rules:
       - list
       - watch
   - apiGroups:
+      - "datadoghq.com"
+    resources:
+      - extendeddaemonsets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - ""
     resources:
       - events

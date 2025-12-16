@@ -130,6 +130,23 @@ func TestGetDaemonsetPodsReturnsUniquePods(t *testing.T) {
 	assert.Equal(t, pods[1].Name, pod2.Name)
 }
 
+func TestCalculateTaintsWithTaintEffect(t *testing.T) {
+	ctx := context.TODO()
+	node := buildNodeWithoutTaints(namespace, []string{daemonset})
+	pod := buildPod("pod", daemonset, corev1.PodScheduled)
+	cfg := buildNidhoggConfigWithNoExecuteTaintEffect(namespace, []string{daemonset})
+	cfg.BuildSelectors()
+
+	handler := buildHandler([]corev1.Pod{pod}, nil, cfg)
+	updatedNode, changes, err := handler.calculateTaints(ctx, &node)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, updatedNode)
+	assert.Contains(t, updatedNode.Spec.Taints, buildActiveTaintWithNoExecuteTaintEffect(namespace, daemonset))
+	assert.Empty(t, changes.taintsRemoved)
+	assert.NotNil(t, changes.taintsAdded, taintName)
+}
+
 func buildHandler(pods []corev1.Pod, daemonsets []appsv1.DaemonSet, config HandlerConfig) Handler {
 	return Handler{
 		Client: fake.NewClientBuilder().WithLists(&corev1.PodList{
@@ -157,6 +174,16 @@ func buildDaemonsets(namespace string, daemonsetNames []string) []Daemonset {
 func buildNidhoggConfig(namespace string, daemonsets []string) HandlerConfig {
 	return HandlerConfig{
 		TaintNamePrefix:            taintNamePrefix,
+		TaintRemovalDelayInSeconds: 0,
+		Daemonsets:                 buildDaemonsets(namespace, daemonsets),
+		NodeSelector:               []string{nodeSelector},
+	}
+}
+
+func buildNidhoggConfigWithNoExecuteTaintEffect(namespace string, daemonsets []string) HandlerConfig {
+	return HandlerConfig{
+		TaintNamePrefix:            taintNamePrefix,
+		TaintEffect:                "NoExecute",
 		TaintRemovalDelayInSeconds: 0,
 		Daemonsets:                 buildDaemonsets(namespace, daemonsets),
 		NodeSelector:               []string{nodeSelector},
@@ -225,6 +252,17 @@ func buildNode(namespace string, daemonsets []string) corev1.Node {
 	}
 }
 
+func buildNodeWithoutTaints(namespace string, daemonsets []string) corev1.Node {
+	return corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: nodeName,
+			Labels: map[string]string{
+				nodeSelector: "true",
+			},
+		},
+	}
+}
+
 func buildActiveTaintsFromDaemonsets(namespace string, daemonsets []string) []corev1.Taint {
 	var taints []corev1.Taint
 	for _, daemonset := range daemonsets {
@@ -238,6 +276,13 @@ func buildActiveTaint(namespace string, daemonset string) corev1.Taint {
 		Key:    buildTaintName(namespace, daemonset),
 		Effect: corev1.TaintEffectNoSchedule,
 		Value:  string(corev1.ConditionTrue),
+	}
+}
+
+func buildActiveTaintWithNoExecuteTaintEffect(namespace string, daemonset string) corev1.Taint {
+	return corev1.Taint{
+		Key:    buildTaintName(namespace, daemonset),
+		Effect: corev1.TaintEffectNoExecute,
 	}
 }
 

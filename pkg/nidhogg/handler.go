@@ -66,6 +66,7 @@ type Handler struct {
 // HandlerConfig contains the options for Nidhogg
 type HandlerConfig struct {
 	TaintNamePrefix            string      `json:"taintNamePrefix,omitempty" yaml:"taintNamePrefix,omitempty"`
+	TaintEffect                string      `json:"taintEffect,omitempty" yaml:"taintEffect,omitempty"`
 	TaintRemovalDelayInSeconds int         `json:"taintRemovalDelayInSeconds,omitempty" yaml:"taintRemovalDelayInSeconds,omitempty"`
 	Daemonsets                 []Daemonset `json:"daemonsets" yaml:"daemonsets"`
 	NodeSelector               []string    `json:"nodeSelector,omitempty" yaml:"nodeSelector,omitempty"`
@@ -224,6 +225,7 @@ func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*
 		//make sure daemonset selector matches node selector
 		if h.config.DaemonsetSelectors[daemonset].Matches(labels.Set(instance.Labels)) {
 			taint := fmt.Sprintf("%s/%s.%s", h.getTaintNamePrefix(), daemonset.Namespace, daemonset.Name)
+			taintEffect := h.getTaintEffect()
 			// Get Pod for nodeName
 			pods, err := h.getDaemonsetPods(ctx, instance.Name, daemonset)
 			if err != nil {
@@ -239,7 +241,7 @@ func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*
 				} else {
 					// taint is not already present, adding it
 					changes.taintsAdded = append(changes.taintsAdded, taint)
-					nodeCopy.Spec.Taints = addTaint(nodeCopy.Spec.Taints, taint)
+					nodeCopy.Spec.Taints = addTaint(nodeCopy.Spec.Taints, taint, taintEffect)
 				}
 			}
 		}
@@ -267,6 +269,24 @@ func (h *Handler) getTaintNamePrefix() string {
 	}
 
 	return defaultTaintKeyPrefix
+}
+
+func (h *Handler) getTaintEffect() corev1.TaintEffect {
+	var effect corev1.TaintEffect
+
+	switch h.config.TaintEffect {
+	case "NoSchedule":
+		effect = corev1.TaintEffectNoSchedule
+	case "PreferNoSchedule":
+		effect = corev1.TaintEffectPreferNoSchedule
+	case "NoExecute":
+		effect = corev1.TaintEffectNoExecute
+	default:
+		logf.Log.Info("Missing/unknown taint effect, defaulting to NoSchedule", "taintEffect", h.config.TaintEffect)
+		effect = corev1.TaintEffectNoSchedule
+	}
+
+	return effect
 }
 
 func (h *Handler) getDaemonsetPods(ctx context.Context, nodeName string, ds Daemonset) ([]*corev1.Pod, error) {
@@ -298,8 +318,8 @@ func podReady(pod *corev1.Pod) bool {
 	return false
 }
 
-func addTaint(taints []corev1.Taint, taintName string) []corev1.Taint {
-	return append(taints, corev1.Taint{Key: taintName, Effect: corev1.TaintEffectNoSchedule})
+func addTaint(taints []corev1.Taint, taintName string, taintEffect corev1.TaintEffect) []corev1.Taint {
+	return append(taints, corev1.Taint{Key: taintName, Effect: taintEffect})
 }
 
 func removeTaint(taints []corev1.Taint, taintName string) []corev1.Taint {

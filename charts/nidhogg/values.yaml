@@ -18,6 +18,9 @@ configuration:
   taintRemovalDelayInSeconds: 5
 #  taintNamePrefix: "required.node.taint.prefix.daemonset.tolerations.have.to.start.with"
 
+#  Configure the taint effect to use when tainting nodes. Options are: NoSchedule(default), NoExecute, PreferNoSchedule
+#  taintEffect: "NoSchedule"
+
 #  nodeSelector:
 #    - "path.to.node.selector.where.the.ds.starts"
 #  daemonsets:

@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.7.1](https://github.com/pelotech/nidhogg/compare/v0.7.0...v0.7.1) (2025-12-22)
+
+
+### Bug Fixes
+
+* **deps:** update kubernetes packages to v0.35.0 ([#80](https://github.com/pelotech/nidhogg/issues/80)) ([f4b9fe0](https://github.com/pelotech/nidhogg/commit/f4b9fe08b772708c3fbacc37fbdf0826ba592de6))
+* **deps:** update module github.com/onsi/gomega to v1.38.3 ([#82](https://github.com/pelotech/nidhogg/issues/82)) ([b34cf62](https://github.com/pelotech/nidhogg/commit/b34cf629ff98e604f308e1daf609834e712f0cfb))
+* **deps:** update module github.com/prometheus/client_golang to v1.23.2 ([#83](https://github.com/pelotech/nidhogg/issues/83)) ([f0d3d09](https://github.com/pelotech/nidhogg/commit/f0d3d09cf9cde2631ad4ea2a7c52e8537f77bbc0))
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.22.4 ([#86](https://github.com/pelotech/nidhogg/issues/86)) ([8767981](https://github.com/pelotech/nidhogg/commit/87679818b198724de360921794b960834067493f))
+
+
+### Chores
+
+* **deps:** update actions/checkout action to v6 ([#89](https://github.com/pelotech/nidhogg/issues/89)) ([68f9dc6](https://github.com/pelotech/nidhogg/commit/68f9dc6c82600f14233a44959746d587f702b450))
+* **deps:** update actions/setup-go action to v6 ([#88](https://github.com/pelotech/nidhogg/issues/88)) ([af5cc36](https://github.com/pelotech/nidhogg/commit/af5cc36c8a7de252537c831bc87efe66b1d92745))
+* **deps:** update appany/helm-oci-chart-releaser action to v0.5.0 ([#81](https://github.com/pelotech/nidhogg/issues/81)) ([e675a37](https://github.com/pelotech/nidhogg/commit/e675a37173dd68f4d20fad1f13872f17053a1a78))
+* **deps:** update dependency go to 1.25.x ([#84](https://github.com/pelotech/nidhogg/issues/84)) ([dea9479](https://github.com/pelotech/nidhogg/commit/dea94793cef9072d5d36c29a2356c6ba69524969))
+* **deps:** update golang docker tag to v1.25.5 ([#79](https://github.com/pelotech/nidhogg/issues/79)) ([ebbc71c](https://github.com/pelotech/nidhogg/commit/ebbc71c7a079b14ce1fe7c0249a60cdb4367ce45))
+* upgrade to go 1.25 ([4696d43](https://github.com/pelotech/nidhogg/commit/4696d434cf59b3912ffba9e609029c6120f91e1e))
+* use go-version-file instead of hard coded value in action ([900b5b4](https://github.com/pelotech/nidhogg/commit/900b5b405d0f44fff1c9fb0159d0b83d167710a8))
+
+
+### Docs
+
+* update release please config to include more types ([8a8546a](https://github.com/pelotech/nidhogg/commit/8a8546a25c53289979d8b91d87e7a54b4030aac6))
+
 ## [0.7.0](https://github.com/pelotech/nidhogg/compare/v0.6.6...v0.7.0) (2025-05-28)
 
 

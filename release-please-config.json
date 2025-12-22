@@ -14,5 +14,51 @@
   ],
   "packages": {
     ".": {}
+    },
+  "changelog-sections": [
+    {
+      "type": "feat",
+      "section": "Features"
+    },
+    {
+      "type": "fix",
+      "section": "Bug Fixes"
+    },
+    {
+      "type": "revert",
+      "section": "Reverts"
+    },
+    {
+      "type": "perf",
+      "section": "Refactors"
+    },
+    {
+      "type": "refactor",
+      "section": "Refactors"
+    },
+    {
+      "type": "chore",
+      "section": "Chores"
+    },
+    {
+      "type": "ci",
+      "section": "Chores"
+    },
+    {
+      "type": "build",
+      "section": "Chores"
+    },
+    {
+      "type": "style",
+      "section": "Chores"
+    },
+    {
+      "type": "docs",
+      "section": "Docs"
+    },
+    {
+      "type": "test",
+      "section": "Tests"
     }
+  ]
   }

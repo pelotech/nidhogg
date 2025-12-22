@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/pelotech/nidhogg/compare/v0.7.1...v0.8.0) (2025-12-22)
+
+
+### Features
+
+* add option for configuring taint effects ([7b20a26](https://github.com/pelotech/nidhogg/commit/7b20a26f09ad4b4c22ff019f2a4b4d654c98b408))
+
 ## [0.7.1](https://github.com/pelotech/nidhogg/compare/v0.7.0...v0.7.1) (2025-12-22)
 
 

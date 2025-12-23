@@ -1,4 +1,7 @@
 {
-  extends: ["config:recommended",],
+  extends: [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
+  ],
   dependencyDashboard: true,
 }

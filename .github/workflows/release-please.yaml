@@ -50,7 +50,7 @@ jobs:
           tags: |
             type=raw,pattern={{version}},value=${{ needs.release-please.outputs.tag_name }}
       - name: Build and push Docker image tag
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64, linux/arm64
@@ -105,7 +105,7 @@ jobs:
         id: sha
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - name: Build and push Docker image sha
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64, linux/arm64

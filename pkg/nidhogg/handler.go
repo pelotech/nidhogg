@@ -282,7 +282,6 @@ func (h *Handler) getTaintEffect() corev1.TaintEffect {
 	case "NoExecute":
 		effect = corev1.TaintEffectNoExecute
 	default:
-		logf.Log.Info("Missing/unknown taint effect, defaulting to NoSchedule", "taintEffect", h.config.TaintEffect)
 		effect = corev1.TaintEffectNoSchedule
 	}
 

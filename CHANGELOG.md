@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.1](https://github.com/pelotech/nidhogg/compare/v0.8.0...v0.8.1) (2026-03-27)
+
+
+### Bug Fixes
+
+* remove log message about missing/unknown taint effect ([#98](https://github.com/pelotech/nidhogg/issues/98)) ([#99](https://github.com/pelotech/nidhogg/issues/99)) ([af89b30](https://github.com/pelotech/nidhogg/commit/af89b3053150d67270b1a6c2183bb4fec55718c9))
+
+
+### Chores
+
+* **deps:** update docker/build-push-action action to v7 ([#105](https://github.com/pelotech/nidhogg/issues/105)) ([d5572ea](https://github.com/pelotech/nidhogg/commit/d5572ea5dc092c888a3b13c24617efaecc8f2e73))
+* **deps:** update docker/login-action action to v4 ([#102](https://github.com/pelotech/nidhogg/issues/102)) ([66d5e63](https://github.com/pelotech/nidhogg/commit/66d5e63c0f6099b907853fb67e0d186c91a11424))
+* **deps:** update docker/metadata-action action to v6 ([#104](https://github.com/pelotech/nidhogg/issues/104)) ([1ce4b71](https://github.com/pelotech/nidhogg/commit/1ce4b71029b2e11f47a7fc0bd499f8d353993c46))
+* **deps:** update docker/setup-buildx-action action to v4 ([#103](https://github.com/pelotech/nidhogg/issues/103)) ([611040a](https://github.com/pelotech/nidhogg/commit/611040a7b8373a2e8821c701149ce6320f1af1cb))
+* **deps:** update docker/setup-qemu-action action to v4 ([#101](https://github.com/pelotech/nidhogg/issues/101)) ([e3716a0](https://github.com/pelotech/nidhogg/commit/e3716a094ed4e1c964daf4d13510b172f18004b8))
+
 ## [0.8.0](https://github.com/pelotech/nidhogg/compare/v0.7.1...v0.8.0) (2025-12-22)
 
 

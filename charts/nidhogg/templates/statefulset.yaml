@@ -55,9 +55,6 @@ spec:
             - name: SECRET_NAME
               value: {{ include "nidhogg.fullname" . }}
           ports:
-            - name: http
-              containerPort: {{ .Values.service.port }}
-              protocol: TCP
             - name: metrics
               containerPort: 8080
               protocol: TCP

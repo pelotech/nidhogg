@@ -1,7 +1,14 @@
 {
   extends: [
-    "config:recommended",
-    "helpers:pinGitHubActionDigests"
+    'config:best-practices'
   ],
-  dependencyDashboard: true,
+  'pre-commit': {
+    enabled: true,
+  },
+  packageRules: [
+    {
+      matchPackageNames: ['*'],
+      minimumReleaseAge: '7 days',
+    },
+  ]
 }

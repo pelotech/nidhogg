@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.2](https://github.com/pelotech/nidhogg/compare/v0.8.1...v0.8.2) (2026-08-16)
+
+
+### Chores
+
+* **deps:** pin dependencies ([#114](https://github.com/pelotech/nidhogg/issues/114)) ([ebd48cf](https://github.com/pelotech/nidhogg/commit/ebd48cf61690e8a57a17d9371589530bc51f86a4))
+* **deps:** update actions/checkout action to v7 ([#110](https://github.com/pelotech/nidhogg/issues/110)) ([b69392d](https://github.com/pelotech/nidhogg/commit/b69392df2a1047fa7ab2823277884e0646a8dd72))
+* **deps:** update actions/setup-go action to v7 ([#111](https://github.com/pelotech/nidhogg/issues/111)) ([f5b5228](https://github.com/pelotech/nidhogg/commit/f5b5228def1f098d50091a10922700deb575f827))
+* **deps:** update googleapis/release-please-action action to v5 ([#108](https://github.com/pelotech/nidhogg/issues/108)) ([8266ffc](https://github.com/pelotech/nidhogg/commit/8266ffc1ebabd9ccf8707805f8f7d506b5798ea1))
+* **deps:** update pre-commit hook adrienverge/yamllint to v1.38.0 ([#116](https://github.com/pelotech/nidhogg/issues/116)) ([a877a4d](https://github.com/pelotech/nidhogg/commit/a877a4d144802f011708b84c2b44af80b37caf1c))
+* **deps:** update pre-commit hook alessandrojcm/commitlint-pre-commit-hook to v9.26.0 ([#117](https://github.com/pelotech/nidhogg/issues/117)) ([b96706b](https://github.com/pelotech/nidhogg/commit/b96706bfc5b712c07c855e01e779767f0971f447))
+* **deps:** update pre-commit hook gruntwork-io/pre-commit to v0.1.30 ([#115](https://github.com/pelotech/nidhogg/issues/115)) ([71fb867](https://github.com/pelotech/nidhogg/commit/71fb86778c2a079cb02c57831d9c3a0d1080ee99))
+* update renovate config ([1c996c9](https://github.com/pelotech/nidhogg/commit/1c996c902b769901e641a586ff46d7f35bf5e724))
+
 ## [0.8.1](https://github.com/pelotech/nidhogg/compare/v0.8.0...v0.8.1) (2026-03-27)
 
 

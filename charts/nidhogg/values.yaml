@@ -7,7 +7,7 @@ image:
   repository: ghcr.io/pelotech/nidhogg
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "@sha256:45b32cb23ead42d03ff947c85b4e33c37be6afa8585e0a2ad5e5a5e5ba72640e"
 
 imagePullSecrets: []
 nameOverride: ""

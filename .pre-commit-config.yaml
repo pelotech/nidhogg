@@ -16,7 +16,7 @@ repos:
   - id: helm-docs-built
     files: (README\.md\.gotmpl|(Chart|requirements|values)\.yaml)$
 - repo: https://github.com/adrienverge/yamllint
-  rev: v1.35.1
+  rev: v1.38.0
   hooks:
   - id: yamllint
     args: [--strict, -c=.yamllint]

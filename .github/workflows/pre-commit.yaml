@@ -17,7 +17,7 @@ jobs:
         run: pip install pre-commit
 
       - name: Build dependencies Helm - nidhogg
-        uses: WyriHaximus/github-action-helm3@v4
+        uses: WyriHaximus/github-action-helm3@e3894d973c282349e3d41d3347767f2b2545b583 # v4
         with:
           exec: helm dependency build charts/nidhogg
 

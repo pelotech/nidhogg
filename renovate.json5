@@ -10,5 +10,13 @@
       matchPackageNames: ['*'],
       minimumReleaseAge: '7 days',
     },
+    {
+      // The chart's own image is versioned by appVersion; the statefulset
+      // template renders `repository:tag`, which can't hold a bare digest.
+      // Pinning here produces an invalid `repo:@sha256:...` reference.
+      matchManagers: ['helm-values'],
+      matchDepNames: ['ghcr.io/pelotech/nidhogg'],
+      pinDigests: false,
+    },
   ]
 }

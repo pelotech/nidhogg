@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Get kubebuilder
-        uses: RyanSiu1995/kubebuilder-action@v1.3.1
+        uses: RyanSiu1995/kubebuilder-action@e7e4de1c1eaf1d089b9a186f7526239acadf0b40 # v1.3.1
         with:
           version: 4.5.0
       - name: Setup Go

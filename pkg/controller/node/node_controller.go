@@ -17,6 +17,7 @@ package node
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/uswitch/nidhogg/pkg/nidhogg"
 	corev1 "k8s.io/api/core/v1"
@@ -49,8 +50,17 @@ var _ handler.TypedEventHandler[*corev1.Node, reconcile.Request] = &nodeEnqueue{
 
 type nodeEnqueue struct{}
 
-// Update implements the interface
-func (e *nodeEnqueue) Update(_ context.Context, _ event.TypedUpdateEvent[*corev1.Node], _ workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+// Update adds the node to the queue when its taints or labels change, since both decide whether it needs a taint
+func (e *nodeEnqueue) Update(_ context.Context, evt event.TypedUpdateEvent[*corev1.Node], q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+	if evt.ObjectOld == nil || evt.ObjectNew == nil {
+		return
+	}
+	if reflect.DeepEqual(evt.ObjectOld.Spec.Taints, evt.ObjectNew.Spec.Taints) && reflect.DeepEqual(evt.ObjectOld.Labels, evt.ObjectNew.Labels) {
+		return
+	}
+	q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+		Name: evt.ObjectNew.GetName(),
+	}})
 }
 
 // Delete implements the interface

@@ -28,7 +28,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -37,6 +39,24 @@ var c client.Client
 var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo"}}
 
 const timeout = time.Second * 5
+
+func TestNodeEnqueueUpdateOnTaintOrLabelChange(t *testing.T) {
+	g := gomega.NewWithT(t)
+	q := workqueue.NewTypedRateLimitingQueue(workqueue.DefaultTypedControllerRateLimiter[reconcile.Request]())
+	defer q.ShutDown()
+	e := &nodeEnqueue{}
+	old := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "foo", Labels: map[string]string{"a": "b"}}}
+
+	statusOnly := old.DeepCopy()
+	statusOnly.Status.Phase = corev1.NodeRunning
+	e.Update(context.TODO(), event.TypedUpdateEvent[*corev1.Node]{ObjectOld: old, ObjectNew: statusOnly}, q)
+	g.Expect(q.Len()).To(gomega.Equal(0))
+
+	tainted := old.DeepCopy()
+	tainted.Spec.Taints = []corev1.Taint{{Key: "x", Effect: corev1.TaintEffectNoSchedule}}
+	e.Update(context.TODO(), event.TypedUpdateEvent[*corev1.Node]{ObjectOld: old, ObjectNew: tainted}, q)
+	g.Expect(q.Len()).To(gomega.Equal(1))
+}
 
 func TestReconcile(t *testing.T) {
 	g := gomega.NewWithT(t)

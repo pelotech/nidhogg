@@ -53,13 +53,6 @@ spec:
         - --leader-election
         - --leader-namespace=nidhogg-system
         - --leader-configmap=nidhogg-election
-        env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: SECRET_NAME
-          value: $(WEBHOOK_SECRET_NAME)
         resources:
           limits:
             memory: 200Mi
@@ -67,35 +60,19 @@ spec:
             cpu: 100m
             memory: 200Mi
         ports:
-        - containerPort: 9876
-          name: webhook-server
-          protocol: TCP
         - containerPort: 8080
           name: metrics
           protocol: TCP
         volumeMounts:
-        - mountPath: /tmp/cert
-          name: cert
-          readOnly: true
         - mountPath: /config
           name: config
           readOnly: true
       terminationGracePeriodSeconds: 10
       volumes:
-      - name: cert
-        secret:
-          defaultMode: 420
-          secretName: webhook-server-secret
       - name: config
         configMap:
           defaultMode: 420
           name: config
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: webhook-server-secret
-  namespace: system
 ---
 apiVersion: v1
 kind: ConfigMap

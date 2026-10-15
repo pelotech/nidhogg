@@ -11,16 +11,6 @@ rules:
       - get
       - list
       - watch
-      - create
-      - update
-      - patch
-      - delete
-  - apiGroups:
-      - ""
-    resources:
-      - nodes/status
-    verbs:
-      - get
       - update
       - patch
   - apiGroups:
@@ -47,55 +37,6 @@ rules:
       - create
       - update
       - patch
-  - apiGroups:
-      - admissionregistration.k8s.io
-    resources:
-      - mutatingwebhookconfigurations
-      - validatingwebhookconfigurations
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
-  - apiGroups:
-      - ""
-    resources:
-      - services
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
-  - apiGroups:
-      - "coordination.k8s.io"
-    resources:
-      - leases
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -115,13 +56,16 @@ kind: Role
 metadata:
   name: {{ include "nidhogg.fullname" . }}-leader-election
 rules:
-  - apiGroups: [""]
-    resources: ["configmaps"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
     verbs:
-      - create
-      - delete
       - get
+      - list
+      - watch
+      - create
       - update
+      - patch
+      - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

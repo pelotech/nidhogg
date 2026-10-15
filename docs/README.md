@@ -96,8 +96,6 @@ We publish a helm chart to https://ghcr.io/pelotech/charts/nidhogg
     enable leader election
 -leader-namespace string
     Namespace where leader configmap located
--master string
-    The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.
 -metrics-addr string
     The address the metric endpoint binds to. (default ":8080")
 -kube-api-qps float

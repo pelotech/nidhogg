@@ -3,7 +3,7 @@ module github.com/uswitch/nidhogg
 go 1.26.0
 
 require (
-	github.com/onsi/gomega v1.39.0
+	github.com/onsi/gomega v1.44.0
 	github.com/prometheus/client_golang v1.24.0
 	github.com/stretchr/testify v1.12.1
 	gopkg.in/yaml.v1 v1.0.0-20140924161607-9f9df34309c0

@@ -8,7 +8,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -158,7 +158,7 @@ func buildHandler(pods []corev1.Pod, daemonsets []appsv1.DaemonSet, config Handl
 			ListMeta: metav1.ListMeta{},
 			Items:    daemonsets,
 		}).Build(),
-		recorder: record.NewFakeRecorder(0),
+		recorder: events.NewFakeRecorder(0),
 		config:   config,
 	}
 }

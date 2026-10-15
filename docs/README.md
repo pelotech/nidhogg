@@ -1,4 +1,4 @@
-![build](https://github.com/pelotech/nidhogg/actions/workflows/build.yaml/badge.svg)
+![build](https://github.com/pelotech/nidhogg/actions/workflows/build.yaml/badge.svg?branch=main)
 ![release](https://github.com/pelotech/nidhogg/actions/workflows/release-please.yaml/badge.svg?branch=main)
 
 # Nidhogg

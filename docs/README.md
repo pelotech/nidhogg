@@ -1,6 +1,5 @@
-![build](https://github.com/pelotech/nidhogg/actions/workflows/build.yaml/badge.svg)
-![release](https://github.com/pelotech/nidhogg/actions/workflows/release.yaml/badge.svg)
-![publish-chart](https://github.com/pelotech/nidhogg/actions/workflows/publish-chart.yaml/badge.svg)
+![build](https://github.com/pelotech/nidhogg/actions/workflows/build.yaml/badge.svg?branch=main)
+![release](https://github.com/pelotech/nidhogg/actions/workflows/release-please.yaml/badge.svg?branch=main)
 
 # Nidhogg
 
@@ -96,8 +95,6 @@ We publish a helm chart to https://ghcr.io/pelotech/charts/nidhogg
     enable leader election
 -leader-namespace string
     Namespace where leader configmap located
--master string
-    The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.
 -metrics-addr string
     The address the metric endpoint binds to. (default ":8080")
 -kube-api-qps float

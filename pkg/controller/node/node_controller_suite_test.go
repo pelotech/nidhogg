@@ -19,15 +19,12 @@ import (
 	"context"
 	stdlog "log"
 	"os"
-	"path/filepath"
 	"sync"
 	"testing"
 
 	"github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/uswitch/nidhogg/pkg/apis"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -36,10 +33,7 @@ import (
 var cfg *rest.Config
 
 func TestMain(m *testing.M) {
-	t := &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crds")},
-	}
-	_ = apis.AddToScheme(scheme.Scheme)
+	t := &envtest.Environment{}
 
 	var err error
 	if cfg, err = t.Start(); err != nil {

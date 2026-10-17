@@ -15,6 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/component-helpers/scheduling/corev1/nodeaffinity"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
@@ -75,13 +76,13 @@ type HandlerConfig struct {
 
 func (hc *HandlerConfig) BuildSelectors() error {
 	hc.DaemonsetSelectors = make(map[Daemonset]labels.Selector)
-	globalSelector := labels.Nothing()
+	globalSelector := labels.NewSelector()
 	for _, rawSelector := range hc.NodeSelector {
 		if selector, err := labels.Parse(rawSelector); err != nil {
 			return fmt.Errorf("error parsing selector: %v", err)
 		} else {
 			requirements, _ := selector.Requirements()
-			globalSelector = labels.NewSelector().Add(requirements...)
+			globalSelector = globalSelector.Add(requirements...)
 		}
 	}
 	//Will initialize all daemonsets with the same selector, either representing the NodeSelector config or labels.Nothing if no config was provided for NodeSelector
@@ -100,6 +101,7 @@ type Daemonset struct {
 type taintChanges struct {
 	taintsAdded   []string
 	taintsRemoved []string
+	requeueAfter  time.Duration
 }
 
 // NewHandler constructs a new instance of Handler
@@ -127,7 +129,7 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 	updatedNode, taintChanges, err := h.calculateTaints(ctx, latestNode)
 	if err != nil {
 		taintOperationErrors.WithLabelValues("calculateTaints").Inc()
-		return reconcile.Result{}, fmt.Errorf("error calculating taints for nodeName: %v", err)
+		return reconcile.Result{}, fmt.Errorf("error calculating taints for node %s: %v", request.Name, err)
 	}
 
 	taintLess := true
@@ -140,7 +142,7 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 	var readySinceKey = h.getTaintNamePrefix() + readySinceAnnotationSuffix
 	var readySinceValue string
 	if taintLess {
-		readySinceValue = time.Now().Format("2006-01-02T15:04:05Z")
+		readySinceValue = time.Now().UTC().Format(time.RFC3339)
 		if updatedNode.Annotations == nil {
 			updatedNode.Annotations = map[string]string{
 				readySinceKey: readySinceValue,
@@ -173,25 +175,23 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 			taintOperations.WithLabelValues(taintOperationRemoved, taintRemoved).Inc()
 		}
 
-		// this is a hack to make the event work on a non-namespaced object
-		updatedNode.UID = types.UID(updatedNode.Name)
-
 		h.recorder.Eventf(updatedNode, nil, corev1.EventTypeNormal, "TaintsChanged", "UpdateTaints", "Taints added: %s, Taints removed: %s, TaintLess: %v, FirstTimeReady: %q", taintChanges.taintsAdded, taintChanges.taintsRemoved, taintLess, readySinceValue)
 	}
 
-	return reconcile.Result{}, nil
+	return reconcile.Result{RequeueAfter: taintChanges.requeueAfter}, nil
 }
 
-func (h *Handler) getSelectorFromDaemonSet(ctx context.Context, daemonset Daemonset) (labels.Selector, error) {
-	ds := &appsv1.DaemonSet{}
-	err := h.Get(ctx, types.NamespacedName{Namespace: daemonset.Namespace, Name: daemonset.Name}, ds)
-	if err != nil {
-		logf.Log.Info(fmt.Sprintf("Could not fetch daemonset %s from namespace %s", daemonset.Name, daemonset.Namespace))
-		return nil, err
+// nodeMatches reports whether the daemonset is expected to run on the node.
+func (h *Handler) nodeMatches(ctx context.Context, daemonset Daemonset, node *corev1.Node) (bool, error) {
+	if h.config.NodeSelector != nil {
+		return h.config.DaemonsetSelectors[daemonset].Matches(labels.Set(node.Labels)), nil
 	}
-	selector := labels.SelectorFromSet(ds.Spec.Template.Spec.NodeSelector)
-
-	return selector, nil
+	ds := &appsv1.DaemonSet{}
+	if err := h.Get(ctx, types.NamespacedName{Namespace: daemonset.Namespace, Name: daemonset.Name}, ds); err != nil {
+		return false, fmt.Errorf("fetching daemonset %s/%s: %w", daemonset.Namespace, daemonset.Name, err)
+	}
+	// shortcut: ignores tolerations, so a node whose taints the daemonset does not tolerate still matches; add a toleration check if that bites.
+	return nodeaffinity.GetRequiredNodeAffinity(&corev1.Pod{Spec: ds.Spec.Template.Spec}).Match(node)
 }
 
 func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*corev1.Node, taintChanges, error) {
@@ -209,21 +209,11 @@ func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*
 		}
 	}
 	for _, daemonset := range h.config.Daemonsets {
-
-		//If NodeSelector was not provided upfront through config
-		if h.config.NodeSelector == nil {
-			//Will try to get selectors from daemonset directly
-			selector, err := h.getSelectorFromDaemonSet(ctx, daemonset)
-			if err != nil {
-				logf.Log.Info(fmt.Sprintf("Could not fetch selector from daemonset %s in namespace %s", daemonset.Name, daemonset.Namespace))
-			} else {
-				//Override existing daemonset selector with the one freshly retrieved from the daemonset
-				h.config.DaemonsetSelectors[daemonset] = selector
-			}
+		matches, err := h.nodeMatches(ctx, daemonset, instance)
+		if err != nil {
+			return nil, taintChanges{}, err
 		}
-
-		//make sure daemonset selector matches node selector
-		if h.config.DaemonsetSelectors[daemonset].Matches(labels.Set(instance.Labels)) {
+		if matches {
 			taint := fmt.Sprintf("%s/%s.%s", h.getTaintNamePrefix(), daemonset.Namespace, daemonset.Name)
 			taintEffect := h.getTaintEffect()
 			// Get Pod for nodeName
@@ -232,10 +222,10 @@ func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*
 				return nil, taintChanges{}, fmt.Errorf("error fetching pods: %v", err)
 			}
 
-			if len(pods) == 0 || (len(pods) > 0 && !utils.AllTrue(pods, func(pod *corev1.Pod) bool { return podReady(pod) })) {
+			_, tainted := taintsToRemove[taint]
+			if len(pods) == 0 || !utils.AllTrue(pods, podReady) {
 				// pod doesn't exist or is not ready
-				_, ok := taintsToRemove[taint]
-				if ok {
+				if tainted {
 					// we want to keep this already existing taint on it
 					delete(taintsToRemove, taint)
 				} else {
@@ -243,24 +233,34 @@ func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*
 					changes.taintsAdded = append(changes.taintsAdded, taint)
 					nodeCopy.Spec.Taints = addTaint(nodeCopy.Spec.Taints, taint, taintEffect)
 				}
+			} else if wait := h.removalDelayRemaining(pods); tainted && wait > 0 {
+				// pod is ready but not for long enough yet, keep the taint and come back later
+				delete(taintsToRemove, taint)
+				if changes.requeueAfter == 0 || wait < changes.requeueAfter {
+					changes.requeueAfter = wait
+				}
 			}
 		}
 	}
 
 	for taint := range taintsToRemove {
-		h.applyTaintRemovalDelay()
 		nodeCopy.Spec.Taints = removeTaint(nodeCopy.Spec.Taints, taint)
 		changes.taintsRemoved = append(changes.taintsRemoved, taint)
 	}
 	return nodeCopy, changes, nil
 }
 
-func (h *Handler) applyTaintRemovalDelay() {
-	if h.config.TaintRemovalDelayInSeconds == 0 {
-		return
+// removalDelayRemaining is how long until the newest pod has been ready for the configured delay.
+func (h *Handler) removalDelayRemaining(pods []*corev1.Pod) time.Duration {
+	var readySince time.Time
+	for _, pod := range pods {
+		for _, condition := range pod.Status.Conditions {
+			if condition.Type == corev1.PodReady && condition.LastTransitionTime.After(readySince) {
+				readySince = condition.LastTransitionTime.Time
+			}
+		}
 	}
-	logf.Log.Info("Daemonset is running, a delay has been set before removing taint.", "delay", h.config.TaintRemovalDelayInSeconds)
-	time.Sleep(time.Duration(h.config.TaintRemovalDelayInSeconds) * time.Second)
+	return time.Duration(h.config.TaintRemovalDelayInSeconds)*time.Second - time.Since(readySince)
 }
 
 func (h *Handler) getTaintNamePrefix() string {
@@ -299,7 +299,7 @@ func (h *Handler) getDaemonsetPods(ctx context.Context, nodeName string, ds Daem
 	matchingPods := make([]*corev1.Pod, 0)
 	for i, pod := range pods.Items {
 		for _, owner := range pod.OwnerReferences {
-			if owner.Name == ds.Name && pod.Spec.NodeName == nodeName {
+			if owner.Kind == "DaemonSet" && owner.Name == ds.Name && pod.Spec.NodeName == nodeName {
 				matchingPods = append(matchingPods, &pods.Items[i])
 			}
 		}

@@ -3,11 +3,13 @@ package nidhogg
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -130,6 +132,121 @@ func TestGetDaemonsetPodsReturnsUniquePods(t *testing.T) {
 	assert.Equal(t, pods[1].Name, pod2.Name)
 }
 
+func TestBuildSelectorsCombinesAllEntries(t *testing.T) {
+	cfg := HandlerConfig{
+		NodeSelector: []string{"role=node", "!master"},
+		Daemonsets:   buildDaemonsets(namespace, []string{daemonset}),
+	}
+	assert.NoError(t, cfg.BuildSelectors())
+
+	selector := cfg.DaemonsetSelectors[cfg.Daemonsets[0]]
+	assert.True(t, selector.Matches(labels.Set{"role": "node"}))
+	assert.False(t, selector.Matches(labels.Set{"role": "node", "master": ""}))
+	assert.False(t, selector.Matches(labels.Set{}))
+}
+
+func TestCalculateTaintsKeepsTaintDuringRemovalDelay(t *testing.T) {
+	ctx := context.TODO()
+	node := buildNode(namespace, []string{daemonset})
+	pod := buildPod("pod", daemonset, corev1.PodReady)
+	pod.Status.Conditions[0].LastTransitionTime = metav1.Now()
+	cfg := buildNidhoggConfig(namespace, []string{daemonset})
+	cfg.TaintRemovalDelayInSeconds = 60
+	cfg.BuildSelectors()
+
+	handler := buildHandler([]corev1.Pod{pod}, nil, cfg)
+	updatedNode, changes, err := handler.calculateTaints(ctx, &node)
+
+	assert.NoError(t, err)
+	assert.Contains(t, updatedNode.Spec.Taints, buildActiveTaint(namespace, daemonset))
+	assert.Empty(t, changes.taintsRemoved)
+	assert.Greater(t, changes.requeueAfter, time.Duration(0))
+	assert.LessOrEqual(t, changes.requeueAfter, 60*time.Second)
+}
+
+func TestCalculateTaintsRemovesTaintAfterRemovalDelay(t *testing.T) {
+	ctx := context.TODO()
+	node := buildNode(namespace, []string{daemonset})
+	pod := buildPod("pod", daemonset, corev1.PodReady)
+	pod.Status.Conditions[0].LastTransitionTime = metav1.NewTime(time.Now().Add(-61 * time.Second))
+	cfg := buildNidhoggConfig(namespace, []string{daemonset})
+	cfg.TaintRemovalDelayInSeconds = 60
+	cfg.BuildSelectors()
+
+	handler := buildHandler([]corev1.Pod{pod}, nil, cfg)
+	updatedNode, changes, err := handler.calculateTaints(ctx, &node)
+
+	assert.NoError(t, err)
+	assert.Empty(t, updatedNode.Spec.Taints)
+	assert.Contains(t, changes.taintsRemoved, taintName)
+	assert.Zero(t, changes.requeueAfter)
+}
+
+func TestCalculateTaintsDoesNotAddTaintDuringRemovalDelay(t *testing.T) {
+	ctx := context.TODO()
+	node := buildNodeWithoutTaints(namespace, []string{daemonset})
+	pod := buildPod("pod", daemonset, corev1.PodReady)
+	pod.Status.Conditions[0].LastTransitionTime = metav1.Now()
+	cfg := buildNidhoggConfig(namespace, []string{daemonset})
+	cfg.TaintRemovalDelayInSeconds = 60
+	cfg.BuildSelectors()
+
+	handler := buildHandler([]corev1.Pod{pod}, nil, cfg)
+	updatedNode, changes, err := handler.calculateTaints(ctx, &node)
+
+	assert.NoError(t, err)
+	assert.Empty(t, updatedNode.Spec.Taints)
+	assert.Empty(t, changes.taintsAdded)
+	assert.Zero(t, changes.requeueAfter)
+}
+
+func TestCalculateTaintsSkipsNodeExcludedByDaemonsetAffinity(t *testing.T) {
+	ctx := context.TODO()
+	node := buildNodeWithoutTaints(namespace, []string{daemonset})
+	pod := buildPod("pod", daemonset, corev1.PodScheduled)
+	ds := buildDaemonset(daemonset)
+	ds.Spec.Template.Spec.NodeSelector = nil
+	ds.Spec.Template.Spec.Affinity = &corev1.Affinity{NodeAffinity: &corev1.NodeAffinity{
+		RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{NodeSelectorTerms: []corev1.NodeSelectorTerm{{
+			MatchExpressions: []corev1.NodeSelectorRequirement{{Key: "kubernetes.io/os", Operator: corev1.NodeSelectorOpIn, Values: []string{"linux"}}},
+		}}},
+	}}
+	cfg := buildNidhoggConfigWithoutNodeSelector(namespace, []string{daemonset})
+	cfg.BuildSelectors()
+
+	handler := buildHandler([]corev1.Pod{pod}, []appsv1.DaemonSet{ds}, cfg)
+	updatedNode, changes, err := handler.calculateTaints(ctx, &node)
+
+	assert.NoError(t, err)
+	assert.Empty(t, updatedNode.Spec.Taints)
+	assert.Empty(t, changes.taintsAdded)
+}
+
+func TestCalculateTaintsFailsWhenDaemonsetMissing(t *testing.T) {
+	ctx := context.TODO()
+	node := buildNode(namespace, []string{daemonset})
+	cfg := buildNidhoggConfigWithoutNodeSelector(namespace, []string{daemonset})
+	cfg.BuildSelectors()
+
+	handler := buildHandler(nil, nil, cfg)
+	_, _, err := handler.calculateTaints(ctx, &node)
+
+	assert.Error(t, err)
+}
+
+func TestGetDaemonsetPodsIgnoresOtherOwnerKinds(t *testing.T) {
+	ctx := context.TODO()
+	pod := buildPod("pod", daemonset, corev1.PodReady)
+	pod.OwnerReferences[0].Kind = "Job"
+	cfg := buildNidhoggConfig(namespace, []string{daemonset})
+
+	handler := buildHandler([]corev1.Pod{pod}, nil, cfg)
+	pods, err := handler.getDaemonsetPods(ctx, nodeName, Daemonset{Name: daemonset, Namespace: namespace})
+
+	assert.NoError(t, err)
+	assert.Empty(t, pods)
+}
+
 func TestCalculateTaintsWithTaintEffect(t *testing.T) {
 	ctx := context.TODO()
 	node := buildNodeWithoutTaints(namespace, []string{daemonset})
@@ -203,7 +320,7 @@ func buildPod(podName string, daemonsetName string, conditionType corev1.PodCond
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            podName,
 			Namespace:       namespace,
-			OwnerReferences: []metav1.OwnerReference{{Name: daemonsetName}},
+			OwnerReferences: []metav1.OwnerReference{{Kind: "DaemonSet", Name: daemonsetName}},
 		},
 		Spec: corev1.PodSpec{
 			NodeName: nodeName,

@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.8.2](https://github.com/pelotech/nidhogg/compare/v0.8.1...v0.8.2) (2026-10-17)
+
+
+### Bug Fixes
+
+* **deps:** update kubernetes monorepo to v0.37.1 ([#106](https://github.com/pelotech/nidhogg/issues/106)) ([45c0c76](https://github.com/pelotech/nidhogg/commit/45c0c76c8641908765b28e2c010b4af01c748848))
+* **deps:** update module github.com/onsi/gomega to v1.44.0 ([#95](https://github.com/pelotech/nidhogg/issues/95)) ([733184b](https://github.com/pelotech/nidhogg/commit/733184b5e9d5da56961c4ce0accfbfcec2d7afce))
+* **deps:** update module github.com/prometheus/client_golang to v1.24.1 ([#112](https://github.com/pelotech/nidhogg/issues/112)) ([7b68fdd](https://github.com/pelotech/nidhogg/commit/7b68fdd008f4306a4df2fc3767345b9882e12fd2))
+* **deps:** update module github.com/prometheus/client_golang to v1.25.0 ([#136](https://github.com/pelotech/nidhogg/issues/136)) ([240bc53](https://github.com/pelotech/nidhogg/commit/240bc531ef0f840bc26257cbb54e2f467e0e02e4))
+* **deps:** update module github.com/stretchr/testify to v1.12.1 ([#121](https://github.com/pelotech/nidhogg/issues/121)) ([613bb4c](https://github.com/pelotech/nidhogg/commit/613bb4c35aed263c908da263a7f73af9fb4cd344))
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.25.2 ([#97](https://github.com/pelotech/nidhogg/issues/97)) ([766bca7](https://github.com/pelotech/nidhogg/commit/766bca754af44df6df538974dd21b60e0d3781d8))
+* drop unused cluster-wide RBAC and webhook leftovers, run as non-root ([#133](https://github.com/pelotech/nidhogg/issues/133)) ([e58b749](https://github.com/pelotech/nidhogg/commit/e58b749991b90b873a9060d8a1eb758fb1629691))
+* migrate node event recorder to events.k8s.io API ([#129](https://github.com/pelotech/nidhogg/issues/129)) ([95b028e](https://github.com/pelotech/nidhogg/commit/95b028e8cb96048f516a339399ee5bd26ce4fe85))
+* node matching and taint removal bugs ([#131](https://github.com/pelotech/nidhogg/issues/131)) ([eee7e89](https://github.com/pelotech/nidhogg/commit/eee7e897bc3144f79052179a08faf6d7a2b7d0bd))
+* run the controller as a Deployment instead of a StatefulSet ([#135](https://github.com/pelotech/nidhogg/issues/135)) ([1e3a607](https://github.com/pelotech/nidhogg/commit/1e3a6077ab2d5403b01390aa77a135d8bbe28375))
+* skip nodes whose taints the daemonset does not tolerate ([#134](https://github.com/pelotech/nidhogg/issues/134)) ([080987a](https://github.com/pelotech/nidhogg/commit/080987a646d5ae41a278a73eb5a308509d6b611c))
+* validate config at startup and replace unmaintained yaml.v1 ([#132](https://github.com/pelotech/nidhogg/issues/132)) ([25f3666](https://github.com/pelotech/nidhogg/commit/25f366690d3b45fe8d9e257fb6558d712a595dab))
+
+
+### Chores
+
+* **deps:** pin dependencies ([#114](https://github.com/pelotech/nidhogg/issues/114)) ([ebd48cf](https://github.com/pelotech/nidhogg/commit/ebd48cf61690e8a57a17d9371589530bc51f86a4))
+* **deps:** update actions/checkout action to v7 ([#110](https://github.com/pelotech/nidhogg/issues/110)) ([b69392d](https://github.com/pelotech/nidhogg/commit/b69392df2a1047fa7ab2823277884e0646a8dd72))
+* **deps:** update actions/setup-go action to v7 ([#111](https://github.com/pelotech/nidhogg/issues/111)) ([f5b5228](https://github.com/pelotech/nidhogg/commit/f5b5228def1f098d50091a10922700deb575f827))
+* **deps:** update docker/build-push-action digest to c3c9e26 ([#124](https://github.com/pelotech/nidhogg/issues/124)) ([b66c7eb](https://github.com/pelotech/nidhogg/commit/b66c7eba5fa1bb2912c455a4ea6196f7de1054da))
+* **deps:** update docker/setup-buildx-action digest to 37fe631 ([#122](https://github.com/pelotech/nidhogg/issues/122)) ([ef1b186](https://github.com/pelotech/nidhogg/commit/ef1b186083d4b21d854669ff54f2b0e7f0198163))
+* **deps:** update docker/setup-buildx-action digest to f87e599 ([#125](https://github.com/pelotech/nidhogg/issues/125)) ([bdf86da](https://github.com/pelotech/nidhogg/commit/bdf86dabb9f2773fd58552355136c1f0171603ef))
+* **deps:** update docker/setup-qemu-action digest to 9901266 ([#123](https://github.com/pelotech/nidhogg/issues/123)) ([10a6e2c](https://github.com/pelotech/nidhogg/commit/10a6e2cd6efb6dacfea80295535c108a586bccee))
+* **deps:** update golang docker tag to v1.27.1 ([#96](https://github.com/pelotech/nidhogg/issues/96)) ([78e0ee1](https://github.com/pelotech/nidhogg/commit/78e0ee1eb38034e07c1bbac90fe59fbcc4fca6b0))
+* **deps:** update googleapis/release-please-action action to v5 ([#108](https://github.com/pelotech/nidhogg/issues/108)) ([8266ffc](https://github.com/pelotech/nidhogg/commit/8266ffc1ebabd9ccf8707805f8f7d506b5798ea1))
+* **deps:** update module golang.org/x/net to v0.55.0 [security] ([#127](https://github.com/pelotech/nidhogg/issues/127)) ([2409424](https://github.com/pelotech/nidhogg/commit/2409424b6c92fd335ea8daed4382f4b5efb471ce))
+* **deps:** update pre-commit hook adrienverge/yamllint to v1.38.0 ([#116](https://github.com/pelotech/nidhogg/issues/116)) ([a877a4d](https://github.com/pelotech/nidhogg/commit/a877a4d144802f011708b84c2b44af80b37caf1c))
+* **deps:** update pre-commit hook alessandrojcm/commitlint-pre-commit-hook to v9.26.0 ([#117](https://github.com/pelotech/nidhogg/issues/117)) ([b96706b](https://github.com/pelotech/nidhogg/commit/b96706bfc5b712c07c855e01e779767f0971f447))
+* **deps:** update pre-commit hook alessandrojcm/commitlint-pre-commit-hook to v9.27.0 ([#126](https://github.com/pelotech/nidhogg/issues/126)) ([e30523a](https://github.com/pelotech/nidhogg/commit/e30523a46b7d7629678029410444f01495177c51))
+* **deps:** update pre-commit hook gruntwork-io/pre-commit to v0.1.30 ([#115](https://github.com/pelotech/nidhogg/issues/115)) ([71fb867](https://github.com/pelotech/nidhogg/commit/71fb86778c2a079cb02c57831d9c3a0d1080ee99))
+* **deps:** update pre-commit hook norwoodj/helm-docs to v1.14.2 ([#118](https://github.com/pelotech/nidhogg/issues/118)) ([174e612](https://github.com/pelotech/nidhogg/commit/174e6121551f3e51d1fadb410eb02c1602fa49c2))
+* **deps:** update pre-commit hook pre-commit/pre-commit-hooks to v6 ([#120](https://github.com/pelotech/nidhogg/issues/120)) ([a424ebe](https://github.com/pelotech/nidhogg/commit/a424ebe55c52921b0e59b4fb42ca9205e4eddc96))
+* go mod tidy after the audit PRs ([#137](https://github.com/pelotech/nidhogg/issues/137)) ([7bc7c3b](https://github.com/pelotech/nidhogg/commit/7bc7c3b1fb9d3c70431dce18113a4a4d57a92eba))
+* update renovate config ([1c996c9](https://github.com/pelotech/nidhogg/commit/1c996c902b769901e641a586ff46d7f35bf5e724))
+
+
+### Docs
+
+* replace badges for removed release workflows ([#130](https://github.com/pelotech/nidhogg/issues/130)) ([afbbb2a](https://github.com/pelotech/nidhogg/commit/afbbb2a6cc370387beb2346d2c150a6876fcb132))
+
 ## [0.8.1](https://github.com/pelotech/nidhogg/compare/v0.8.0...v0.8.1) (2026-03-27)
 
 

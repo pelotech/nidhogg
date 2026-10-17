@@ -36,7 +36,7 @@ import (
 // Add creates a new Node Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager, cfg nidhogg.HandlerConfig) error {
-	return add(mgr, newReconciler(mgr, cfg))
+	return add(mgr, newReconciler(mgr, cfg), cfg)
 }
 
 // newReconciler returns a new reconcile.Reconciler
@@ -83,22 +83,29 @@ func (e *nodeEnqueue) Create(_ context.Context, evt event.TypedCreateEvent[*core
 
 var _ handler.TypedEventHandler[*corev1.Pod, reconcile.Request] = &podEnqueue{}
 
-type podEnqueue struct{}
+type podEnqueue struct {
+	daemonsets []nidhogg.Daemonset
+}
 
 // Generic implements the interface
 func (e *podEnqueue) Generic(_ context.Context, _ event.TypedGenericEvent[*corev1.Pod], _ workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 }
 
-// canAddToQueue check if the Pod is associated to a node and is a daemonset pod
+// canAddToQueue check if the Pod is on a node and belongs to one of the watched daemonsets
 func (e *podEnqueue) canAddToQueue(pod *corev1.Pod) bool {
 	if pod.Spec.NodeName == "" {
 		return false
 	}
 	owner := v1.GetControllerOf(pod)
-	if owner == nil {
+	if owner == nil || owner.Kind != "DaemonSet" {
 		return false
 	}
-	return owner.Kind == "DaemonSet"
+	for _, ds := range e.daemonsets {
+		if ds.Name == owner.Name && ds.Namespace == pod.Namespace {
+			return true
+		}
+	}
+	return false
 }
 
 // Create adds the node of the daemonset pod to the queue
@@ -145,7 +152,7 @@ func (e *podEnqueue) Delete(_ context.Context, evt event.TypedDeleteEvent[*corev
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
+func add(mgr manager.Manager, r reconcile.Reconciler, cfg nidhogg.HandlerConfig) error {
 	// Create a new controller
 	c, err := controller.New("node-controller", mgr, controller.Options{
 		Reconciler:              r,
@@ -161,7 +168,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	err = c.Watch(source.Kind(mgr.GetCache(), &corev1.Pod{}, &podEnqueue{}))
+	err = c.Watch(source.Kind(mgr.GetCache(), &corev1.Pod{}, &podEnqueue{daemonsets: cfg.Daemonsets}))
 	if err != nil {
 		return err
 	}

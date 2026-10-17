@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	yaml "gopkg.in/yaml.v1"
+	"sigs.k8s.io/yaml"
 )
 
 // GetConfig reads the config file, parses it whether it be in json or yaml and returns a handler config
@@ -19,6 +19,15 @@ func GetConfig(config string) (HandlerConfig, error) {
 	err = yaml.Unmarshal(bytes, &handlerConf)
 	if err != nil {
 		return HandlerConfig{}, fmt.Errorf("error parsing file: %v", err)
+	}
+
+	if len(handlerConf.Daemonsets) == 0 {
+		return HandlerConfig{}, fmt.Errorf("config needs at least one daemonset")
+	}
+	switch handlerConf.TaintEffect {
+	case "", "NoSchedule", "PreferNoSchedule", "NoExecute":
+	default:
+		return HandlerConfig{}, fmt.Errorf("unknown taintEffect %q, use NoSchedule, PreferNoSchedule or NoExecute", handlerConf.TaintEffect)
 	}
 
 	if err := handlerConf.BuildSelectors(); err != nil {

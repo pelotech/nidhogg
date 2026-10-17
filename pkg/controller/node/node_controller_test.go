@@ -58,6 +58,22 @@ func TestNodeEnqueueUpdateOnTaintOrLabelChange(t *testing.T) {
 	g.Expect(q.Len()).To(gomega.Equal(1))
 }
 
+func TestCanAddToQueueOnlyWatchedDaemonsets(t *testing.T) {
+	g := gomega.NewWithT(t)
+	e := &podEnqueue{daemonsets: []nidhogg.Daemonset{{Name: "kiam", Namespace: "kube-system"}}}
+	controller := true
+	pod := func(ns, owner, kind string) *corev1.Pod {
+		return &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Namespace: ns, OwnerReferences: []metav1.OwnerReference{{Kind: kind, Name: owner, Controller: &controller}}},
+			Spec:       corev1.PodSpec{NodeName: "foo"},
+		}
+	}
+	g.Expect(e.canAddToQueue(pod("kube-system", "kiam", "DaemonSet"))).To(gomega.BeTrue())
+	g.Expect(e.canAddToQueue(pod("kube-system", "kube-proxy", "DaemonSet"))).To(gomega.BeFalse())
+	g.Expect(e.canAddToQueue(pod("other", "kiam", "DaemonSet"))).To(gomega.BeFalse())
+	g.Expect(e.canAddToQueue(pod("kube-system", "kiam", "StatefulSet"))).To(gomega.BeFalse())
+}
+
 func TestReconcile(t *testing.T) {
 	g := gomega.NewWithT(t)
 	instance := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
@@ -72,7 +88,7 @@ func TestReconcile(t *testing.T) {
 	_ = handlerConfig.BuildSelectors()
 
 	recFn, requests := SetupTestReconcile(newReconciler(mgr, handlerConfig))
-	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
+	g.Expect(add(mgr, recFn, handlerConfig)).NotTo(gomega.HaveOccurred())
 
 	_, cancel, mgrStopped := StartTestManager(mgr, g)
 

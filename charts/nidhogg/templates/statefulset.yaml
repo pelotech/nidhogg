@@ -47,26 +47,13 @@ spec:
           {{- range $key, $value := .Values.extraArgs }}
             - --{{ $key }}={{ $value }}
           {{- end }}
-          env:
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: SECRET_NAME
-              value: {{ include "nidhogg.fullname" . }}
           ports:
             - name: metrics
               containerPort: 8080
               protocol: TCP
-            - containerPort: 9876
-              name: webhook-server
-              protocol: TCP
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            - mountPath: /tmp/cert
-              name: cert
-              readOnly: true
             - mountPath: /config
               name: config
               readOnly: true
@@ -74,10 +61,6 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
-        - name: cert
-          secret:
-            defaultMode: 420
-            secretName: {{ include "nidhogg.fullname" $ }}
         - name: config
           configMap:
             defaultMode: 420

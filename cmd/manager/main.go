@@ -22,11 +22,8 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/uswitch/nidhogg/pkg/apis"
-	"github.com/uswitch/nidhogg/pkg/controller"
+	"github.com/uswitch/nidhogg/pkg/controller/node"
 	"github.com/uswitch/nidhogg/pkg/nidhogg"
-	"github.com/uswitch/nidhogg/pkg/webhook"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -74,13 +71,13 @@ func main() {
 	// Get a config to talk to the apiserver
 	log.Info("setting up client for manager")
 	cfg, err := config.GetConfig()
-	cfg.QPS = float32(clientRequestQPS)
-	cfg.Burst = clientRequestBurst
-	cfg.DisableCompression = disableCompression
 	if err != nil {
 		log.Error(err, "unable to set up client config")
 		os.Exit(1)
 	}
+	cfg.QPS = float32(clientRequestQPS)
+	cfg.Burst = clientRequestBurst
+	cfg.DisableCompression = disableCompression
 
 	// Create a new Cmd to provide shared dependencies and start components
 	log.Info("setting up manager")
@@ -95,25 +92,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("Registering Components.")
-
-	// Setup Scheme for all resources
-	log.Info("setting up scheme")
-	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "unable add APIs to scheme")
-		os.Exit(1)
-	}
-
-	// Setup all Controllers
 	log.Info("Setting up controller")
-	if err := controller.AddToManager(mgr, handlerConf); err != nil {
+	if err := node.Add(mgr, handlerConf); err != nil {
 		log.Error(err, "unable to register controllers to the manager")
-		os.Exit(1)
-	}
-
-	log.Info("setting up webhooks")
-	if err := webhook.AddToManager(mgr); err != nil {
-		log.Error(err, "unable to register webhooks to the manager")
 		os.Exit(1)
 	}
 

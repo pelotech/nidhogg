@@ -222,6 +222,47 @@ func TestCalculateTaintsSkipsNodeExcludedByDaemonsetAffinity(t *testing.T) {
 	assert.Empty(t, changes.taintsAdded)
 }
 
+func TestCalculateTaintsSkipsNodeWithUntoleratedTaint(t *testing.T) {
+	ctx := context.TODO()
+	node := buildNodeWithoutTaints(namespace, []string{daemonset})
+	node.Spec.Taints = []corev1.Taint{{Key: "nvidia.com/gpu", Effect: corev1.TaintEffectNoSchedule}}
+	pod := buildPod("pod", daemonset, corev1.PodScheduled)
+	cfg := buildNidhoggConfigWithoutNodeSelector(namespace, []string{daemonset})
+	cfg.BuildSelectors()
+
+	handler := buildHandler([]corev1.Pod{pod}, []appsv1.DaemonSet{buildDaemonset(daemonset)}, cfg)
+	_, changes, err := handler.calculateTaints(ctx, &node)
+	assert.NoError(t, err)
+	assert.Empty(t, changes.taintsAdded)
+
+	tolerant := buildDaemonset(daemonset)
+	tolerant.Spec.Template.Spec.Tolerations = []corev1.Toleration{{Key: "nvidia.com/gpu", Operator: corev1.TolerationOpExists}}
+	handler = buildHandler([]corev1.Pod{pod}, []appsv1.DaemonSet{tolerant}, cfg)
+	_, changes, err = handler.calculateTaints(ctx, &node)
+	assert.NoError(t, err)
+	assert.Contains(t, changes.taintsAdded, buildTaintName(namespace, daemonset))
+}
+
+func TestCalculateTaintsIgnoresTransientAndOwnTaints(t *testing.T) {
+	ctx := context.TODO()
+	node := buildNode(namespace, []string{daemonset})
+	node.Spec.Taints = append(node.Spec.Taints,
+		corev1.Taint{Key: corev1.TaintNodeNotReady, Effect: corev1.TaintEffectNoSchedule},
+		corev1.Taint{Key: "node.cloudprovider.kubernetes.io/uninitialized", Effect: corev1.TaintEffectNoSchedule},
+		corev1.Taint{Key: "nvidia.com/gpu", Effect: corev1.TaintEffectPreferNoSchedule},
+	)
+	pod := buildPod("pod", daemonset, corev1.PodScheduled)
+	cfg := buildNidhoggConfigWithoutNodeSelector(namespace, []string{daemonset})
+	cfg.BuildSelectors()
+
+	handler := buildHandler([]corev1.Pod{pod}, []appsv1.DaemonSet{buildDaemonset(daemonset)}, cfg)
+	updatedNode, changes, err := handler.calculateTaints(ctx, &node)
+
+	assert.NoError(t, err)
+	assert.Contains(t, updatedNode.Spec.Taints, buildActiveTaint(namespace, daemonset))
+	assert.Empty(t, changes.taintsRemoved)
+}
+
 func TestCalculateTaintsFailsWhenDaemonsetMissing(t *testing.T) {
 	ctx := context.TODO()
 	node := buildNode(namespace, []string{daemonset})

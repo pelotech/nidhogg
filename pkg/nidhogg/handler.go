@@ -15,6 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	corev1helpers "k8s.io/component-helpers/scheduling/corev1"
 	"k8s.io/component-helpers/scheduling/corev1/nodeaffinity"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -190,8 +191,33 @@ func (h *Handler) nodeMatches(ctx context.Context, daemonset Daemonset, node *co
 	if err := h.Get(ctx, types.NamespacedName{Namespace: daemonset.Namespace, Name: daemonset.Name}, ds); err != nil {
 		return false, fmt.Errorf("fetching daemonset %s/%s: %w", daemonset.Namespace, daemonset.Name, err)
 	}
-	// shortcut: ignores tolerations, so a node whose taints the daemonset does not tolerate still matches; add a toleration check if that bites.
-	return nodeaffinity.GetRequiredNodeAffinity(&corev1.Pod{Spec: ds.Spec.Template.Spec}).Match(node)
+	pod := &corev1.Pod{Spec: ds.Spec.Template.Spec}
+	matches, err := nodeaffinity.GetRequiredNodeAffinity(pod).Match(node)
+	if err != nil || !matches {
+		return matches, err
+	}
+	_, untolerated := corev1helpers.FindMatchingUntoleratedTaint(logf.Log, node.Spec.Taints, pod.Spec.Tolerations, h.taintBlocksDaemonset, false)
+	return !untolerated, nil
+}
+
+// transientTaints come and go on their own or are tolerated by every daemonset pod, so they never mean the daemonset will not run on the node.
+var transientTaints = map[string]bool{
+	corev1.TaintNodeNotReady:                         true,
+	corev1.TaintNodeUnreachable:                      true,
+	corev1.TaintNodeUnschedulable:                    true,
+	corev1.TaintNodeMemoryPressure:                   true,
+	corev1.TaintNodeDiskPressure:                     true,
+	corev1.TaintNodePIDPressure:                      true,
+	corev1.TaintNodeNetworkUnavailable:               true,
+	"node.cloudprovider.kubernetes.io/uninitialized": true,
+}
+
+// taintBlocksDaemonset reports whether a taint can keep the daemonset pod off the node for good.
+func (h *Handler) taintBlocksDaemonset(taint *corev1.Taint) bool {
+	if taint.Effect == corev1.TaintEffectPreferNoSchedule || transientTaints[taint.Key] {
+		return false
+	}
+	return !strings.HasPrefix(taint.Key, h.getTaintNamePrefix())
 }
 
 func (h *Handler) calculateTaints(ctx context.Context, instance *corev1.Node) (*corev1.Node, taintChanges, error) {

@@ -18,7 +18,7 @@ Nidhogg requires a yaml/json config file to tell it what Daemonsets to watch and
 | Attribute name | Required/Optional | Description |
 | :--- | :--- | :--- |
 | `daemonsets` | Required | Array of Daemonsets to watch, each containing two fields `name` and `namespace` |
-| `nodeSelector` | Optional | Map of keys/values corresponding to node labels, will default to get selectors from daemonsets directly if not provided |
+| `nodeSelector` | Optional | List of label selectors picking the nodes to act on. If not provided, a node is picked when the daemonset pod template would run on it: its node selector and required node affinity match, and its tolerations cover the node taints (nidhogg taints and the transient `node.kubernetes.io/*` and cloud-provider taints do not count) |
 | `taintNamePrefix` | Optional | Prefix of the taint name, defaults to `nidhogg.uswitch.com` if not specified |
 | `taintRemovalDelayInSeconds` | Optional | Delay to apply before removing taint on the node when ready, defaults to 0 if not specified |
 

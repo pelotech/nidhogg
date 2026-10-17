@@ -15,13 +15,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
 	corev1helpers "k8s.io/component-helpers/scheduling/corev1"
 	"k8s.io/component-helpers/scheduling/corev1/nodeaffinity"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/recorder"
 )
 
 const (
@@ -61,7 +61,7 @@ func init() {
 // Handler performs the main business logic of the Wave controller
 type Handler struct {
 	client.Client
-	recorder record.EventRecorder
+	recorder recorder.EventRecorder
 	config   HandlerConfig
 }
 
@@ -106,7 +106,7 @@ type taintChanges struct {
 }
 
 // NewHandler constructs a new instance of Handler
-func NewHandler(c client.Client, r record.EventRecorder, conf HandlerConfig) *Handler {
+func NewHandler(c client.Client, r recorder.EventRecorder, conf HandlerConfig) *Handler {
 	return &Handler{Client: c, recorder: r, config: conf}
 }
 
@@ -176,7 +176,7 @@ func (h *Handler) HandleNode(ctx context.Context, request reconcile.Request) (re
 			taintOperations.WithLabelValues(taintOperationRemoved, taintRemoved).Inc()
 		}
 
-		h.recorder.Eventf(updatedNode, corev1.EventTypeNormal, "TaintsChanged", "Taints added: %s, Taints removed: %s, TaintLess: %v, FirstTimeReady: %q", taintChanges.taintsAdded, taintChanges.taintsRemoved, taintLess, readySinceValue)
+		h.recorder.Eventf(updatedNode, nil, corev1.EventTypeNormal, "TaintsChanged", "UpdateTaints", "Taints added: %s, Taints removed: %s, TaintLess: %v, FirstTimeReady: %q", taintChanges.taintsAdded, taintChanges.taintsRemoved, taintLess, readySinceValue)
 	}
 
 	return reconcile.Result{RequeueAfter: taintChanges.requeueAfter}, nil

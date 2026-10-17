@@ -41,7 +41,7 @@ func Add(mgr manager.Manager, cfg nidhogg.HandlerConfig) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager, cfg nidhogg.HandlerConfig) reconcile.Reconciler {
-	eventRecorder := mgr.GetEventRecorderFor("nidhogg")
+	eventRecorder := mgr.GetEventRecorder("nidhogg")
 	reconcilerHandler := nidhogg.NewHandler(mgr.GetClient(), eventRecorder, cfg)
 	return &ReconcileNode{reconcilerHandler, mgr.GetScheme()}
 }

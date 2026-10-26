@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.3](https://github.com/pelotech/nidhogg/compare/v0.8.2...v0.8.3) (2026-10-26)
+
+
+### Refactors
+
+* move to prek, add nix and general cleanup ([#139](https://github.com/pelotech/nidhogg/issues/139)) ([4772bad](https://github.com/pelotech/nidhogg/commit/4772bad6ac9f950f580d92cc303645e4ee5b2433))
+
 ## [0.8.2](https://github.com/pelotech/nidhogg/compare/v0.8.1...v0.8.2) (2026-10-17)
 
 

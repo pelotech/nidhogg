@@ -3,6 +3,6 @@ name: nidhogg
 description: A Helm chart for Kubernetes
 type: application
 # x-release-please-start-version
-version: 0.8.2
-appVersion: v0.8.2
+version: 0.8.3
+appVersion: v0.8.3
 # x-release-please-end

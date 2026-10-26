@@ -44,12 +44,6 @@
               actionlint
               zizmor
             ];
-
-            # envtest needs kube-apiserver and etcd; nixpkgs has no darwin
-            # kube-apiserver, so fetch the upstream envtest binaries instead.
-            shellHook = ''
-              export KUBEBUILDER_ASSETS="$(setup-envtest use -p path 1.37.x)"
-            '';
           };
 
           treefmt = {

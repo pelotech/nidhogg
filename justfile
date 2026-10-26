@@ -8,7 +8,7 @@ build:
 
 # Run unit and envtest integration tests
 test:
-    go test ./pkg/... ./cmd/...
+    KUBEBUILDER_ASSETS="$(setup-envtest use -p path 1.37.x)" go test ./pkg/... ./cmd/...
 
 # Run all pre-commit hooks
 lint:

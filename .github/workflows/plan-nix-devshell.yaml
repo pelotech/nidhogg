@@ -1,0 +1,43 @@
+name: plan-nix-devshell
+permissions:
+  contents: read
+  pull-requests: write
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'flake.nix'
+      - 'flake.lock'
+      - '.github/workflows/plan-nix-devshell.yaml'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+jobs:
+  devshell-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/nix-devshell
+        with:
+          gh-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment dev shell closure diff
+        run: |
+          shell=devShells.x86_64-linux.default
+          target=$(nix build ".#${shell}" --no-link --print-out-paths)
+          # base has no flake.nix (e.g. the PR that introduces it): nothing to diff against
+          if base=$(nix build "github:${REPO}/${BASE_SHA}#${shell}" --no-link --print-out-paths 2>/dev/null); then
+            diff=$(nix store diff-closures "$base" "$target" | sed 's/\x1b\[[0-9;]*m//g')
+            if [ -n "$diff" ]; then diff=$'```\n'"$diff"$'\n```'; else diff='No dev shell packages changed.'; fi
+          else
+            diff='No dev shell on the base branch; this PR introduces it.'
+          fi
+          gh pr comment "${PR}" --repo "${REPO}" --body "$(printf '## Nix dev shell diff\n\n%s\n' "$diff")"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR: ${{ github.event.number }}

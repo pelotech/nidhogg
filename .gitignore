@@ -22,3 +22,10 @@ bin
 *.swp
 *.swo
 *~
+
+# direnv
+.direnv
+
+# nix
+result
+result-*

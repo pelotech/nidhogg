@@ -4,19 +4,20 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
       release_version: ${{ steps.release.outputs.version }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -31,26 +32,28 @@ jobs:
       packages: write
       contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=raw,pattern={{version}},value=${{ needs.release-please.outputs.tag_name }}
       - name: Build and push Docker image tag
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           platforms: linux/amd64, linux/arm64
@@ -61,7 +64,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Build dependencies Helm - nidhogg
-        uses: WyriHaximus/github-action-helm3@e3894d973c282349e3d41d3347767f2b2545b583 # v4
+        uses: WyriHaximus/github-action-helm3@e3894d973c282349e3d41d3347767f2b2545b583 # v4.0.2
         with:
           exec: helm dependency build charts/nidhogg
       - name: Chart | Push - nidhogg
@@ -82,20 +85,22 @@ jobs:
       packages: write
       contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Log in to the Container registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -103,9 +108,9 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
       - name: sha short
         id: sha
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
       - name: Build and push Docker image sha
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           platforms: linux/amd64, linux/arm64

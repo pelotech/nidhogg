@@ -1,4 +1,7 @@
 name: lint-pr-title
+permissions:
+  contents: read
+  pull-requests: read
 
 on:
   pull_request:

@@ -1,4 +1,6 @@
 name: pr-build
+permissions:
+  contents: read
 on:
   pull_request:
     branches:
@@ -11,18 +13,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Get kubebuilder
-        uses: RyanSiu1995/kubebuilder-action@e7e4de1c1eaf1d089b9a186f7526239acadf0b40 # v1.3.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          version: 4.5.0
-      - name: Setup Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+          persist-credentials: false
+      - uses: $/.github/actions/nix-devshell
         with:
-          go-version-file: go.mod
+          gh-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Display Go version
         run: go version
       - name: Build manager library
-        run: go build -o bin/manager github.com/uswitch/nidhogg/cmd/manager
+        run: just build
       - name: Run tests
-        run: go test ./pkg/... ./cmd/...
+        run: just test

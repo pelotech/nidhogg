@@ -1,0 +1,22 @@
+---
+name: nix-devshell
+description: "install nix and export the dev shell PATH"
+inputs:
+  gh-token:
+    description: github token for nix downloads
+    default: ${{ github.token }}
+  working-directory:
+    description: directory containing flake.nix
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      with:
+        github_access_token: ${{ inputs.gh-token }}
+
+    - name: Put nix devshell tools on PATH
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: nix develop -c printenv PATH >> "$GITHUB_PATH" # zizmor: ignore[github-env]

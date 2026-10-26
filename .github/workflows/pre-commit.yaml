@@ -1,4 +1,6 @@
 name: pre-commit
+permissions:
+  contents: read
 on:
   push:
     branches:
@@ -11,15 +13,15 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: install pre-commit
-        run: pip install pre-commit
-
-      - name: Build dependencies Helm - nidhogg
-        uses: WyriHaximus/github-action-helm3@e3894d973c282349e3d41d3347767f2b2545b583 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          exec: helm dependency build charts/nidhogg
+          persist-credentials: false
+      - uses: $/.github/actions/nix-devshell
+        with:
+          gh-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: pre-commit
-        run: pre-commit run --all-files --show-diff-on-failure
+      - name: Build helm dependencies
+        run: helm dependency build charts/nidhogg
+
+      - name: prek
+        run: prek run --all-files --show-diff-on-failure

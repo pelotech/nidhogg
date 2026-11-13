@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.8.3](https://github.com/pelotech/nidhogg/compare/v0.8.2...v0.8.3) (2026-11-13)
+
+
+### Bug Fixes
+
+* **deps:** update kubernetes monorepo to v0.37.2 ([#144](https://github.com/pelotech/nidhogg/issues/144)) ([313c8ab](https://github.com/pelotech/nidhogg/commit/313c8abad169d9639ebaa5643dc9f4e48d7e27af))
+
+
+### Refactors
+
+* move to prek, add nix and general cleanup ([#139](https://github.com/pelotech/nidhogg/issues/139)) ([4772bad](https://github.com/pelotech/nidhogg/commit/4772bad6ac9f950f580d92cc303645e4ee5b2433))
+
+
+### Chores
+
+* **deps:** update cachix/install-nix-action action to v31.11.3 ([#143](https://github.com/pelotech/nidhogg/issues/143)) ([8bbbc9c](https://github.com/pelotech/nidhogg/commit/8bbbc9c1c0d2af619a38867adc81f176c3b6afe7))
+* **deps:** update docker/login-action action to v4.8.0 ([#142](https://github.com/pelotech/nidhogg/issues/142)) ([e3080ec](https://github.com/pelotech/nidhogg/commit/e3080ec6cdb77036609217bfd1b6b6387a04adfb))
+* **deps:** update golang docker tag to v1.27.3 ([#138](https://github.com/pelotech/nidhogg/issues/138)) ([5d086ab](https://github.com/pelotech/nidhogg/commit/5d086ab02d551b0cd8f4b4c8229e52761db82630))
+* **deps:** update pre-commit hook zizmorcore/zizmor-pre-commit to v1.32.0 ([#145](https://github.com/pelotech/nidhogg/issues/145)) ([1b5bca8](https://github.com/pelotech/nidhogg/commit/1b5bca80d837c4d4abb9a6fc4e6e1d54c81309df))
+
 ## [0.8.2](https://github.com/pelotech/nidhogg/compare/v0.8.1...v0.8.2) (2026-10-17)
 
 

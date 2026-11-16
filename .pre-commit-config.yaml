@@ -27,7 +27,7 @@ repos:
         stages: [commit-msg]
         additional_dependencies: ["@commitlint/config-conventional"]
   - repo: https://github.com/kjanat/actionlint
-    rev: v1.17
+    rev: v1.17.1
     hooks:
       - id: actionlint
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
